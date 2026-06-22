@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Desk Mat Remote</title>
+
+<link rel="manifest" href="manifest-remote.json">
+<meta name="theme-color" content="#caa24a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Desk Mat Remote">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --paper:#1a1a18;--ink:#e8e4d8;--pencil:#9a9a92;
+  --gold:#caa24a;--alert:#c0584a;
+  --panel-bg:#222220;--panel-text:#eee;--panel-sub:#bbb;
+  --ok:#4caf50;--err:#c0584a;
+}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe UI,Roboto,sans-serif;
+  min-height:100vh;padding:16px;padding-bottom:48px;
+}
+h1{font-size:18px;text-align:center;color:var(--gold);letter-spacing:1px;margin-bottom:4px;}
+.subtitle{font-size:11px;color:var(--pencil);text-align:center;margin-bottom:18px;}
+
+/* ---- DISCONNECTED / SCAN SCREEN ---- */
+#scanScreen{max-width:420px;margin:0 auto;}
+#connStatusBig{
+  text-align:center;font-size:13px;padding:14px;border-radius:16px;margin-bottom:18px;
+  background:rgba(192,88,74,.15);color:#e08a7e;
+}
+#connStatusBig.ok{background:rgba(76,175,80,.15);color:#7fd99a;}
+.scan-box{
+  background:var(--panel-bg);border-radius:18px;padding:18px;text-align:center;
+  box-shadow:0 4px 14px rgba(0,0,0,.25);margin-bottom:14px;
+}
+.scan-box h2{font-size:12px;color:var(--panel-sub);letter-spacing:1.5px;margin-bottom:12px;font-weight:600;}
+#cameraWrap{
+  position:relative;width:100%;aspect-ratio:1/1;max-width:280px;margin:0 auto 14px;
+  border-radius:14px;overflow:hidden;background:#000;display:none;
+}
+#cameraWrap video{width:100%;height:100%;object-fit:cover;}
+#scanFrame{
+  position:absolute;top:12%;left:12%;width:76%;height:76%;
+  border:3px solid var(--gold);border-radius:12px;pointer-events:none;
+}
+.big-btn{
+  background:var(--gold);color:#2b2b28;border:none;padding:14px 20px;border-radius:16px;
+  font-weight:700;cursor:pointer;font-size:14px;width:100%;margin-top:6px;
+}
+.big-btn.gray{background:#3a3a38;color:#ddd;}
+#scanHint{font-size:11px;color:var(--pencil);margin-top:10px;line-height:1.5;}
+#manualEntry{margin-top:14px;}
+#manualEntry input{
+  width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);
+  border-radius:12px;color:var(--panel-text);padding:10px 12px;font-size:13px;margin-bottom:8px;
+}
+#manualToggle{font-size:11px;color:var(--gold);text-align:center;margin-top:14px;cursor:pointer;text-decoration:underline;}
+
+/* ---- REMOTE CONTROL SCREEN (after connected) ---- */
+#remoteView{display:none;max-width:480px;margin:0 auto;}
+#rmConnStatus{text-align:center;font-size:12px;padding:8px;border-radius:14px;margin-bottom:14px;background:rgba(76,175,80,.18);color:#4caf50;}
+.rm-section{background:var(--panel-bg);color:var(--panel-text);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 4px 14px rgba(0,0,0,.18);}
+.rm-section h2{font-size:11px;color:var(--panel-sub);letter-spacing:2px;margin-bottom:10px;font-weight:600;}
+#rmTimerDisplay{font-size:38px;font-family:Georgia,serif;text-align:center;color:#fff;margin:6px 0;}
+#rmCurrentTask{font-size:13px;color:var(--gold);text-align:center;margin-bottom:8px;min-height:18px;}
+#rmPhase{font-size:10px;color:#888;text-align:center;letter-spacing:2px;margin-bottom:8px;}
+.rm-btn-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.rm-btn{background:var(--gold);color:#2b2b28;border:none;padding:12px 16px;border-radius:16px;font-weight:700;cursor:pointer;font-size:13px;flex:1;min-width:70px;}
+.rm-btn.gray{background:#444;color:#ddd;}
+.rm-btn.red{background:#5a1a1a;color:#ffb3aa;}
+.rm-btn.green{background:#1a4a20;color:#58d68d;}
+.rm-tasks-list{display:flex;flex-direction:column;gap:8px;}
+.rm-task-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.06);border-radius:12px;font-size:12px;}
+.rm-task-item .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.rm-task-item.done{opacity:.5;}
+.rm-check-btn{margin-left:auto;background:rgba(88,214,141,.18);color:#58d68d;border:none;padding:5px 12px;border-radius:10px;cursor:pointer;font-size:11px;}
+#rmThemes{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.rm-tsw{width:32px;height:32px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
+#rmNoteInput,#rmLinkInput{
+  width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);
+  border-radius:12px;color:var(--panel-text);padding:10px;font-family:inherit;font-size:13px;resize:none;
+}
+#rmProgressBar{height:6px;background:rgba(255,255,255,.15);border-radius:3px;margin-top:10px;}
+#rmProgressFill{height:6px;background:var(--gold);border-radius:3px;transition:width .5s;}
+.rm-vol-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.rm-vol-row label{font-size:11px;color:#888;}
+.rm-vol-row input{flex:1;}
+#rmFileInput{display:none;}
+.rm-file-pick{
+  border:2px dashed #555;border-radius:12px;padding:14px;text-align:center;font-size:12px;color:#bbb;cursor:pointer;
+}
+.rm-file-pick:hover{border-color:var(--gold);}
+#rmFileStatus{font-size:11px;color:#888;margin-top:8px;text-align:center;}
+.rm-disconnect{font-size:11px;color:#c0584a;text-align:center;margin-top:18px;cursor:pointer;text-decoration:underline;}
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--gold);color:#2b2b28;padding:10px 18px;border-radius:20px;
+  font-size:12px;font-weight:700;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;
+}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<h1>📱 DESK MAT REMOTE</h1>
+<div class="subtitle">Điều khiển Desk Mat từ điện thoại</div>
+
+<!-- ============ SCAN / DISCONNECTED SCREEN ============ -->
+<div id="scanScreen">
+  <div id="connStatusBig">🔌 Chưa kết nối</div>
+
+  <div class="scan-box">
+    <h2>QUÉT MÃ QR TRÊN DESK MAT</h2>
+    <div id="cameraWrap">
+      <video id="cameraVideo" autoplay playsinline muted></video>
+      <div id="scanFrame"></div>
+    </div>
+    <button class="big-btn" id="startScanBtn">📷 Mở camera quét QR</button>
+    <button class="big-btn gray" id="stopScanBtn" style="display:none;">✕ Dừng quét</button>
+    <div id="scanHint">Mở Desk Mat trên máy tính, bấm nút "📱 QR Remote", rồi quét mã QR hiện ra bằng camera ở đây.</div>
+
+    <div id="manualToggle">Không quét được? Nhập mã kênh thủ công</div>
+    <div id="manualEntry" style="display:none;">
+      <input type="text" id="manualChannelInput" placeholder="Nhập mã kênh (ví dụ: deskmat_ab12cd)">
+      <button class="big-btn gray" id="manualConnectBtn">Kết nối bằng mã này</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ REMOTE CONTROL SCREEN ============ -->
+<div id="remoteView">
+  <div id="rmConnStatus">✅ Đã kết nối Desktop</div>
+
+  <div class="rm-section">
+    <h2>⏱ TIMER & FOCUS</h2>
+    <div id="rmPhase">---</div>
+    <div id="rmCurrentTask">---</div>
+    <div id="rmTimerDisplay">--:--</div>
+    <div id="rmProgressBar"><div id="rmProgressFill" style="width:0%"></div></div>
+    <div class="rm-btn-row" style="margin-top:12px;">
+      <button class="rm-btn green" onclick="rmSend('timer_start')">▶ Start</button>
+      <button class="rm-btn gray" onclick="rmSend('timer_pause')">⏸ Pause</button>
+      <button class="rm-btn gray" onclick="rmSend('focus_skip')">⏭ Skip</button>
+      <button class="rm-btn red" onclick="rmSend('timer_stop')">✕ Stop</button>
+    </div>
+    <div class="rm-btn-row" style="margin-top:8px;">
+      <button class="rm-btn" onclick="rmSend('focus_mode_open')" style="background:#3a2a08;color:#f3d878;">🎯 Focus Mode</button>
+    </div>
+  </div>
+
+  <div class="rm-section">
+    <h2>📌 TASKS</h2>
+    <div class="rm-tasks-list" id="rmTasksList"></div>
+  </div>
+
+  <div class="rm-section">
+    <h2>🎵 NHẠC</h2>
+    <div class="rm-btn-row">
+      <button class="rm-btn" onclick="rmSend('music_play')">▶ Play</button>
+      <button class="rm-btn gray" onclick="rmSend('music_pause')">⏸ Pause</button>
+    </div>
+    <div class="rm-vol-row">
+      <label>🔊</label>
+      <input type="range" min="0" max="100" value="70" oninput="rmSend('music_vol:'+this.value)">
+    </div>
+    <textarea id="rmLinkInput" rows="2" placeholder="Dán link YouTube hoặc Spotify..." style="margin-top:10px;"></textarea>
+    <button class="rm-btn" style="width:100%;margin-top:8px;" onclick="rmSendLink()">🔗 Gửi lên Desktop để phát</button>
+  </div>
+
+  <div class="rm-section">
+    <h2>🎨 GIAO DIỆN</h2>
+    <div id="rmThemes">
+      <div class="rm-tsw" style="background:linear-gradient(135deg,#f2d96b,#e8a7a0)" onclick="rmSend('theme:default')" title="Mặc định"></div>
+      <div class="rm-tsw" style="background:linear-gradient(135deg,#f5f0e8,#e0c890)" onclick="rmSend('theme:paper')" title="Paper"></div>
+      <div class="rm-tsw" style="background:linear-gradient(135deg,#1a1a18,#5a4a1f)" onclick="rmSend('theme:dark')" title="Dark"></div>
+      <div class="rm-tsw" style="background:linear-gradient(135deg,#2c1e0e,#7a5a18)" onclick="rmSend('theme:coffee')" title="Coffee"></div>
+      <div class="rm-tsw" style="background:linear-gradient(135deg,#1a2c18,#2a4020)" onclick="rmSend('theme:forest')" title="Forest"></div>
+      <div class="rm-tsw" style="background:linear-gradient(135deg,#1a0a3a,#0a3a2a)" onclick="rmSend('theme:glass')" title="Glass"></div>
+      <div class="rm-tsw" style="background:linear-gradient(135deg,#0d1117,#1a3a10)" onclick="rmSend('theme:programmer')" title="Programmer"></div>
+    </div>
+  </div>
+
+  <div class="rm-section">
+    <h2>📝 GỬI STICKY NOTE NHANH</h2>
+    <textarea id="rmNoteInput" rows="3" placeholder="Nhập nội dung note..."></textarea>
+    <button class="rm-btn" style="width:100%;margin-top:8px;" onclick="rmSendNote()">📌 Gửi lên Desktop</button>
+  </div>
+
+  <div class="rm-section">
+    <h2>📁 GỬI TÀI LIỆU (ảnh / PDF / Word, tối đa 250KB)</h2>
+    <div class="rm-file-pick" id="rmFilePick">Bấm để chọn file gửi sang Desktop</div>
+    <input type="file" id="rmFileInput" accept=".pdf,.doc,.docx,image/*">
+    <div id="rmFileStatus"></div>
+  </div>
+
+  <div class="rm-section">
+    <h2>📊 TIẾN ĐỘ HÔM NAY</h2>
+    <div id="rmProgressInfo" style="font-size:13px;text-align:center;color:var(--panel-sub);">Đang tải...</div>
+  </div>
+
+  <div class="rm-disconnect" id="rmDisconnectBtn">🔌 Ngắt kết nối / Quét mã khác</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- MQTT client (public broker, dùng để đồng bộ Desktop <-> Điện thoại qua Internet thật) -->
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script>
+const MQTT_BROKER = 'wss://broker.emqx.io:8084/mqtt';
+const FILE_SIZE_LIMIT = 250*1024; // 250KB — giới hạn an toàn cho MQTT public broker
+
+let rmClient = null;
+let currentChannel = null;
+
+const scanScreen = document.getElementById('scanScreen');
+const remoteView = document.getElementById('remoteView');
+const connStatusBig = document.getElementById('connStatusBig');
+const cameraWrap = document.getElementById('cameraWrap');
+const cameraVideo = document.getElementById('cameraVideo');
+const startScanBtn = document.getElementById('startScanBtn');
+const stopScanBtn = document.getElementById('stopScanBtn');
+const toast = document.getElementById('toast');
+
+let mediaStream = null;
+let scanLoopId = null;
+let barcodeDetector = null;
+
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'), 1800);
+}
+
+/* ---------------- QR SCAN VIA CAMERA ---------------- */
+function supportsBarcodeDetector(){
+  return ('BarcodeDetector' in window);
+}
+
+async function startScan(){
+  cameraWrap.style.display = 'block';
+  startScanBtn.style.display = 'none';
+  stopScanBtn.style.display = 'block';
+  try{
+    mediaStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    cameraVideo.srcObject = mediaStream;
+    await cameraVideo.play();
+  }catch(ex){
+    showToast('⚠️ Không mở được camera (kiểm tra quyền truy cập)');
+    stopScan();
+    return;
+  }
+
+  if(supportsBarcodeDetector()){
+    try{
+      barcodeDetector = new BarcodeDetector({formats:['qr_code']});
+    }catch(ex){
+      barcodeDetector = null;
+    }
+  }
+
+  if(!barcodeDetector){
+    showToast('⚠️ Thiết bị này chưa hỗ trợ quét QR tự động — dùng nhập mã thủ công bên dưới');
+    document.getElementById('manualEntry').style.display = 'block';
+    stopScan();
+    return;
+  }
+
+  scanLoop();
+}
+
+async function scanLoop(){
+  if(!mediaStream) return;
+  try{
+    const codes = await barcodeDetector.detect(cameraVideo);
+    if(codes && codes.length > 0){
+      handleScannedText(codes[0].rawValue);
+      return;
+    }
+  }catch(ex){}
+  scanLoopId = requestAnimationFrame(scanLoop);
+}
+
+function stopScan(){
+  if(scanLoopId) cancelAnimationFrame(scanLoopId);
+  scanLoopId = null;
+  if(mediaStream){
+    mediaStream.getTracks().forEach(t=>t.stop());
+    mediaStream = null;
+  }
+  cameraWrap.style.display = 'none';
+  startScanBtn.style.display = 'block';
+  stopScanBtn.style.display = 'none';
+}
+
+function handleScannedText(text){
+  stopScan();
+  let ch = null;
+  try{
+    const u = new URL(text);
+    ch = u.searchParams.get('ch');
+  }catch(ex){
+    // không phải URL hợp lệ — thử coi cả chuỗi luôn là mã kênh
+    ch = text.trim();
+  }
+  if(!ch){
+    showToast('⚠️ Mã QR không hợp lệ');
+    return;
+  }
+  connectToChannel(ch);
+}
+
+startScanBtn.addEventListener('click', startScan);
+stopScanBtn.addEventListener('click', stopScan);
+
+document.getElementById('manualToggle').addEventListener('click', ()=>{
+  const el = document.getElementById('manualEntry');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('manualConnectBtn').addEventListener('click', ()=>{
+  const ch = document.getElementById('manualChannelInput').value.trim();
+  if(!ch){ showToast('⚠️ Vui lòng nhập mã kênh'); return; }
+  connectToChannel(ch);
+});
+
+/* ---------------- MQTT CONNECT TO CHANNEL ---------------- */
+function connectToChannel(ch){
+  if(typeof mqtt === 'undefined'){
+    showToast('⚠️ Không tải được thư viện kết nối (kiểm tra mạng)');
+    return;
+  }
+  currentChannel = ch;
+  const cmdTopic = 'deskmat3v/' + ch + '/cmd';
+  const stateTopic = 'deskmat3v/' + ch + '/state';
+
+  connStatusBig.textContent = '⏳ Đang kết nối...';
+  connStatusBig.className = '';
+
+  if(rmClient){ try{ rmClient.end(true); }catch(ex){} }
+  rmClient = mqtt.connect(MQTT_BROKER, {clientId:'remote_'+ch+'_'+Math.random().toString(36).slice(2,8), reconnectPeriod:3000});
+
+  rmClient.on('connect', ()=>{
+    rmClient.subscribe(stateTopic);
+    rmClient.publish(cmdTopic, JSON.stringify({from:'remote', cmd:'request_state'}));
+    connStatusBig.textContent = '⏳ Đã vào broker, đợi Desktop phản hồi...';
+  });
+
+  let gotDesktopState = false;
+  rmClient.on('message', (topic, payload)=>{
+    try{
+      const d = JSON.parse(payload.toString());
+      if(d.from !== 'desktop') return;
+      if(!gotDesktopState){
+        gotDesktopState = true;
+        connStatusBig.textContent = '✅ Đã kết nối Desktop';
+        connStatusBig.className = 'ok';
+        scanScreen.style.display = 'none';
+        remoteView.style.display = 'block';
+        showToast('✅ Kết nối thành công!');
+      }
+      updateRemoteUI(d);
+    }catch(ex){}
+  });
+
+  rmClient.on('error', ()=>{
+    connStatusBig.textContent = '⚠️ Lỗi kết nối broker';
+    connStatusBig.className = '';
+  });
+
+  window.__rmCmdTopic = cmdTopic;
+}
+
+function rmSend(cmd){
+  if(rmClient && rmClient.connected && window.__rmCmdTopic){
+    rmClient.publish(window.__rmCmdTopic, JSON.stringify({from:'remote', cmd}));
+    rmShowFeedback(cmd);
+  }
+}
+function rmSendNote(){
+  const el = document.getElementById('rmNoteInput');
+  const txt = el.value.trim();
+  if(!txt) return;
+  rmSend('quick_note:'+txt);
+  el.value = '';
+}
+function rmSendLink(){
+  const el = document.getElementById('rmLinkInput');
+  const txt = el.value.trim();
+  if(!txt){ showToast('⚠️ Dán link trước đã'); return; }
+  rmSend('youtube_link:'+txt);
+  showToast('🔗 Đã gửi link lên Desktop');
+  el.value = '';
+}
+function rmShowFeedback(cmd){
+  const fb = document.createElement('div');
+  fb.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--gold);color:#2b2b28;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:bold;z-index:999;transition:opacity .5s;';
+  fb.textContent = '✓ ' + cmd.split(':')[0].replace(/_/g,' ').toUpperCase();
+  document.body.appendChild(fb);
+  setTimeout(()=>{ fb.style.opacity='0'; setTimeout(()=>fb.remove(), 500); }, 800);
+}
+
+function updateRemoteUI(d){
+  if(d.timer !== undefined) document.getElementById('rmTimerDisplay').textContent = d.timer;
+  if(d.task !== undefined) document.getElementById('rmCurrentTask').textContent = d.task || '';
+  if(d.phase !== undefined) document.getElementById('rmPhase').textContent = d.phase || '';
+  if(d.progress !== undefined) document.getElementById('rmProgressFill').style.width = d.progress + '%';
+  if(d.tasks) rmRenderTasks(d.tasks);
+}
+
+function rmRenderTasks(tasks){
+  const tasksListEl = document.getElementById('rmTasksList');
+  const progressInfoEl = document.getElementById('rmProgressInfo');
+  tasksListEl.innerHTML = '';
+  let done = 0;
+  tasks.forEach((t,i)=>{
+    if(t.done) done++;
+    const div = document.createElement('div');
+    div.className = 'rm-task-item' + (t.done ? ' done' : '');
+    const colors = ['#f2d96b','#e8a7a0','#9bc4dd','#a9c98f'];
+    div.innerHTML = `<div class="dot" style="background:${colors[i%4]}"></div><span style="flex:1">${t.title||'Task '+(i+1)}</span><button class="rm-check-btn" onclick="rmSend('task_done:${i}')">${t.done?'↩':'✓'}</button>`;
+    tasksListEl.appendChild(div);
+  });
+  progressInfoEl.textContent = 'Đã hoàn thành ' + done + '/' + tasks.length + ' task hôm nay';
+}
+
+/* ---------------- SEND FILE TO DESKTOP ---------------- */
+document.getElementById('rmFilePick').addEventListener('click', ()=>{
+  document.getElementById('rmFileInput').click();
+});
+document.getElementById('rmFileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById('rmFileStatus');
+  if(file.size > FILE_SIZE_LIMIT){
+    statusEl.textContent = '⚠️ File quá lớn (' + Math.round(file.size/1024) + 'KB) — giới hạn 250KB qua kết nối này.';
+    statusEl.style.color = '#e08a7e';
+    e.target.value = '';
+    return;
+  }
+  statusEl.textContent = '⏳ Đang gửi ' + file.name + '...';
+  statusEl.style.color = '#bbb';
+  const reader = new FileReader();
+  reader.onload = () => {
+    const base64 = reader.result.split(',')[1];
+    if(rmClient && rmClient.connected && window.__rmCmdTopic){
+      rmClient.publish(window.__rmCmdTopic, JSON.stringify({
+        from:'remote',
+        file:{ name:file.name, mime:file.type, size:file.size, data:base64 }
+      }));
+      statusEl.textContent = '✅ Đã gửi: ' + file.name;
+      statusEl.style.color = '#7fd99a';
+      showToast('📤 Đã gửi file lên Desktop');
+    } else {
+      statusEl.textContent = '⚠️ Chưa kết nối Desktop';
+      statusEl.style.color = '#e08a7e';
+    }
+    e.target.value = '';
+  };
+  reader.onerror = () => {
+    statusEl.textContent = '⚠️ Lỗi đọc file';
+    statusEl.style.color = '#e08a7e';
+  };
+  reader.readAsDataURL(file);
+});
+
+/* ---------------- DISCONNECT ---------------- */
+document.getElementById('rmDisconnectBtn').addEventListener('click', ()=>{
+  if(rmClient){ try{ rmClient.end(true); }catch(ex){} rmClient = null; }
+  currentChannel = null;
+  window.__rmCmdTopic = null;
+  remoteView.style.display = 'none';
+  scanScreen.style.display = 'block';
+  connStatusBig.textContent = '🔌 Chưa kết nối';
+  connStatusBig.className = '';
+});
+
+/* ---------------- SERVICE WORKER ---------------- */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw-remote.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Smart Sticky Note Desk Mat v3</title>
+
+<!-- PWA: cho phép "Thêm vào màn hình chính" trên điện thoại -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#caa24a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Desk Mat">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+
+
+
+<style>
+/* ===== RESET & BASE ===== */
+*{box-sizing:border-box;margin:0;padding:0;}
+
+/* ===== THEME SYSTEM ===== */
+:root{
+  --paper:#f3efe6;--ink:#2b2b28;--pencil:#6b6b63;
+  --mat:#3d3d3a;--mat-dark:#262624;
+  --yellow:#f2d96b;--pink:#e8a7a0;--blue:#9bc4dd;--green:#a9c98f;
+  --gold:#caa24a;--alert:#c0584a;
+  --panel-bg:#2f2f2d;--panel-text:#eee;--panel-sub:#bbb;
+}
+/* Paper theme */
+body.theme-paper{
+  --paper:#f5f0e8;--ink:#1a1a16;--pencil:#5a5a52;
+  --yellow:#f0d660;--pink:#e89e96;--blue:#8ab8d4;--green:#9ac080;
+  --gold:#c09040;
+  --panel-bg:#2a2a28;--panel-text:#f0ece4;
+}
+/* Dark theme */
+body.theme-dark{
+  --paper:#1a1a18;--ink:#e8e4d8;--pencil:#9a9a92;
+  --yellow:#5a4a1f;--pink:#5a2e2a;--blue:#1f3a52;--green:#2c4a26;
+  --gold:#e0c070;
+  --panel-bg:#111110;--panel-text:#ddd;--panel-sub:#999;
+}
+body.theme-dark .note h3{color:#f3efe6;}
+body.theme-dark .note p{color:#e0dcd4;}
+body.theme-dark .mat{background:#111;}
+body.theme-dark h1{color:#e8e4d8;}
+/* Coffee theme */
+body.theme-coffee{
+  --paper:#2c1e0e;--ink:#f5ddb0;--pencil:#c8a870;
+  --yellow:#7a5a18;--pink:#6a2e28;--blue:#1e3a50;--green:#2a4020;
+  --gold:#e0a830;--panel-bg:#1a1008;--panel-text:#f5ddb0;--panel-sub:#c8a870;
+}
+body.theme-coffee .note h3{color:#f5ddb0;}
+body.theme-coffee .note p{color:#e0c888;}
+body.theme-coffee h1{color:#e0c070;}
+/* Forest theme */
+body.theme-forest{
+  --paper:#1a2c18;--ink:#d8f0d0;--pencil:#88b878;
+  --yellow:#404a10;--pink:#4a2820;--blue:#0a2838;--green:#1a4010;
+  --gold:#80c040;--panel-bg:#0e1a0c;--panel-text:#d0f0c0;--panel-sub:#88b870;
+}
+body.theme-forest .note h3{color:#d0f0c0;}
+body.theme-forest h1{color:#90d060;}
+/* Glass theme */
+body.theme-glass{
+  --paper:rgba(200,220,255,.15);--ink:#ffffff;--pencil:#ccddff;
+  --yellow:rgba(200,160,30,.5);--pink:rgba(200,100,100,.5);
+  --blue:rgba(60,120,200,.5);--green:rgba(60,160,80,.5);
+  --gold:#ffd040;--panel-bg:rgba(255,255,255,.1);--panel-text:#fff;--panel-sub:#cce;
+}
+body.theme-glass{background:linear-gradient(135deg,#1a0a3a,#0a2050,#0a3a2a);}
+body.theme-glass .mat{background:rgba(255,255,255,.08);backdrop-filter:blur(10px);}
+body.theme-glass .note{backdrop-filter:blur(6px);}
+body.theme-glass h1{color:#fff;}
+/* Programmer theme */
+body.theme-programmer{
+  --paper:#0d1117;--ink:#58d68d;--pencil:#3da55d;
+  --yellow:#1a3a10;--pink:#3a1010;--blue:#0a1a40;--green:#0a2c10;
+  --gold:#58d68d;--panel-bg:#0a0f14;--panel-text:#58d68d;--panel-sub:#3da55d;
+}
+body.theme-programmer{background:#080c10;font-family:'Courier New',monospace;}
+body.theme-programmer h1{color:#58d68d;font-family:'Courier New',monospace;}
+body.theme-programmer .note h3{color:#58d68d;font-family:'Courier New',monospace;}
+body.theme-programmer .note p{color:#3da55d;}
+body.theme-programmer .mat{background:#0d1117;border:1px solid #2a4a2a;}
+body.theme-programmer button{background:#1a4a20;color:#58d68d;border:1px solid #58d68d;}
+body.theme-programmer button:hover{background:#2a6a30;}
+
+/* ===== GLOBAL ===== */
+body{background:var(--paper);font-family:'Courier New',monospace;color:var(--ink);padding:20px;transition:background .4s,color .4s;}
+h1{font-family:Georgia,serif;font-size:26px;letter-spacing:1px;border-bottom:2px solid var(--ink);display:inline-block;padding-bottom:4px;margin-bottom:4px;}
+.tagline{color:var(--pencil);font-style:italic;margin-bottom:18px;font-size:12px;}
+
+/* ===== MAT ===== */
+.mat{
+  position:relative;
+  background:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABtoAAATYCAYAAACRLxOAAAAACXBIWXMAABcSAAAXEgFnn9JSAAAgAElEQVR4AeydBZwd5fX+z1zXdcv6bnbjwd21xSG4BZLgLoViLa4t/H601BX4U2hLC7+2UIprcYIHiPtG1+3q/J9ndudmEyK7WcnKOZ88uXPnzh353rtzZ97nPec1lj013hQNJaAEBoRAbWNcdjlvbjQSMz3YoHnSsfvXL166Kvz+zK9dpmn9KSannnyI49f/c7X4/d4B2aeuG5n19UI5cfpt5lezF3O2AXGn3odOhxZ0PseDhhJQAkpACSgBJaAElIASUAJKQAkoASWgBJSAElACGyHANrUwdDQ0A9odCjg8huEt8EqgzCfuDJcYLi6moQSGBgGX2yVp6WkSDAfF6XQM6E6z3TyZSEosFpNIewSKWtPJREISmD8YYmCJDIYj1n1QAtuQwMzZbRKNWyabGIijv7tnxm8f/J6rrCTf3ivHE0+9av7k109JPJ6w5w3Y4/ixZfL4b24yxowu5jZpsvEXfzfoMagM0lACSkAJKAEloASUgBJQAkpACSgBJaAElIASUAJKYOME/Ji9B3Q/9AC0Pwy1oCfbbaRtH5a07ULiyXGryQYwGkODAJqwxef3SVZOloTTQwNmslnGWjQmbS1tUre2XlbVrJLVK9ZIfW2DtLa0SgyvDRaTjZ+k87un5N46ND5S3UslMPQJ/PG5Ovl4dnvqQGrrG429dp0o++21nTz30nsSwQkimTSNdz+cZY6tLjEmwPjiyWyggtvKz8uUvXabaLz2209lbV0jN07RedsRehVqgDSUgBJQAkpACSgBJaAElIASUAJKQAkoASWgBJSAEugQYPvae9LPoaugY6AlaHYc6r6bJhsNbQIuNrYYCtT3YKrTqU20umgN9OFZjO4SaMqWXfqvPq0bv9lkM1MLQ96yZhgDW7HghbPSQgAAIABJREFUi9FoKC3OQbMtqiGgquWkQ9M0mMYKMkMcW+bUCWHJj6XUAKQFZQK6J7aZk4SBVSNKQPeC8ADYEcoJN7FW65OYnAPyoReSjuNfEBbYQJ/iKqHqJFGJiV0F4UoAACAASURBVA0CWD7gTK8RVJoBEQoQSRBNtaqgCXCsUdUHVGlCxaSB5YCChUOdA9Wg3uKONupwETYBCKkC5DAZQ4gkb9WBEgAoKp1Q0TiGrwqBJaAYjGj2YD9CUgmPMwLxBYcmW7yDz4ER8b8Dj+E2gZaAoQAAgJMCRgCjZgBqMC5DExJMIQBqGqE4aTvBQGQBIzDYpAGdwgA=') center center / cover no-repeat;
+  border-radius:18px;padding:16px;box-shadow:0 10px 0 var(--mat-dark),inset 0 0 0 4px #888;max-width:1300px;margin:0 auto;position:relative;transition:background .4s;
+}
+
+/* layout */
+.mat-layout{display:grid;grid-template-columns:1fr 175px;gap:14px;align-items:stretch;}
+.mat-left{display:flex;flex-direction:column;gap:10px;}
+
+/* ===== STICKY NOTES ===== */
+.top-row{display:flex;gap:10px;flex-wrap:nowrap;}
+.note{
+  flex:1;min-width:0;border-radius:4px;padding:12px 10px 8px;cursor:pointer;position:relative;
+  transition:transform .15s,box-shadow .15s;box-shadow:0 4px 6px rgba(0,0,0,.3);user-select:none;
+}
+.note:hover{transform:translateY(-3px);}
+.note.done{filter:saturate(.5) brightness(.85);}
+.note.dragging{opacity:.5;transform:scale(.95);}
+.note.drag-over{box-shadow:0 0 0 3px var(--gold),0 4px 16px rgba(202,162,74,.4);}
+.note .num{
+  position:absolute;top:6px;left:8px;font-weight:bold;font-size:12px;
+  background:rgba(255,255,255,.5);border-radius:50%;width:18px;height:18px;
+  display:flex;align-items:center;justify-content:center;
+}
+.note .led{position:absolute;top:8px;right:10px;width:10px;height:10px;border-radius:50%;background:#888;}
+.note.done .led{background:#4caf50;box-shadow:0 0 8px 2px #4caf50;}
+.note.overdue .led{background:var(--alert);box-shadow:0 0 8px 2px var(--alert);animation:pulse 1s infinite;}
+.note .del-btn{
+  position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,.25);border:none;
+  color:#fff;width:18px;height:18px;border-radius:50%;font-size:10px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0;line-height:1;
+  opacity:0;transition:opacity .2s;
+}
+.note:hover .del-btn{opacity:1;}
+.note h3{margin:14px 0 2px;font-size:14px;font-family:Georgia,serif;}
+.note p{margin:0;font-size:11px;color:#333;}
+.note .time{font-size:10px;margin-top:6px;opacity:.7;display:flex;justify-content:space-between;}
+.note .time input{width:68px;background:rgba(255,255,255,.4);border:none;border-radius:3px;font-family:inherit;font-size:10px;text-align:center;padding:1px 2px;}
+.note1{background:var(--yellow);}
+.note2{background:var(--pink);}
+.note3{background:var(--blue);}
+.note4{background:var(--green);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+/* ===== FOCUS MODE PRO ===== */
+#focusOverlay{
+  display:none;position:fixed;inset:0;z-index:100;
+  background:radial-gradient(ellipse at center,#1a1a18 0%,#000 100%);
+  flex-direction:column;align-items:center;justify-content:center;
+  color:#eee;text-align:center;
+}
+#focusOverlay.active{display:flex;}
+#focusModeTitle{font-family:Georgia,serif;font-size:18px;color:#bbb;margin-bottom:8px;letter-spacing:2px;}
+#focusCurrentTask{font-family:Georgia,serif;font-size:20px;color:var(--gold);margin-bottom:28px;min-height:28px;}
+#focusRingContainer{position:relative;width:200px;height:200px;margin:0 auto 28px;}
+#focusRingSvg{transform:rotate(-90deg);}
+#focusRingBg{fill:none;stroke:#333;stroke-width:12;}
+#focusRingFill{fill:none;stroke:var(--gold);stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset .9s linear;}
+#focusTimerBig{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:Georgia,serif;font-size:38px;font-weight:bold;color:#fff;
+}
+#focusStatus{font-size:13px;color:#aaa;letter-spacing:2px;margin-bottom:20px;}
+.focus-btns{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+.focus-btns button{padding:10px 22px;font-size:14px;border-radius:20px;letter-spacing:1px;}
+#focusEscHint{margin-top:18px;font-size:11px;color:#666;letter-spacing:1px;}
+#focusPhase{font-size:12px;color:#888;letter-spacing:2px;margin-bottom:6px;}
+#focusProgressBar{
+  width:180px;height:4px;background:#333;border-radius:2px;margin:0 auto 20px;
+}
+#focusProgressFill{height:4px;background:var(--gold);border-radius:2px;transition:width .9s linear;}
+
+/* ===== PHONE ZONE ===== */
+.phone-zone{
+  width:100%;min-height:100%;border:3px solid #555;border-radius:22px;
+  background:repeating-linear-gradient(135deg,#2e2e2c,#2e2e2c 6px,#353533 6px,#353533 12px);
+  color:#bbb;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  text-align:center;font-size:11px;letter-spacing:1px;padding:22px 8px 12px;cursor:pointer;
+  position:relative;transition:box-shadow .2s;overflow:hidden;
+}
+.phone-zone::before{
+  content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  width:36px;height:5px;background:#111;border-radius:3px;
+}
+.phone-zone.alert{box-shadow:0 0 18px 4px var(--alert);border-color:var(--alert);color:#ffb3aa;}
+.phone-zone .icon{font-size:26px;margin-bottom:6px;margin-top:8px;}
+#qrCanvas{border-radius:6px;margin:8px auto 4px;display:block;background:#fff;}
+#qrStatus{font-size:10px;color:#888;margin-top:4px;line-height:1.3;}
+#phoneConnStatus{font-size:10px;margin-top:6px;padding:3px 8px;border-radius:10px;background:rgba(0,0,0,.4);}
+#phoneConnStatus.connected{color:#4caf50;background:rgba(76,175,80,.15);}
+#phoneConnStatus.waiting{color:var(--gold);background:rgba(202,162,74,.1);}
+
+/* ===== PANELS ROW ===== */
+.bottom-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;color:#eee;}
+.panel{background:var(--panel-bg);border-radius:8px;padding:12px;text-align:center;font-size:12px;color:var(--panel-text);}
+.panel h4{margin:0 0 6px;font-size:11px;letter-spacing:1px;color:var(--panel-sub);font-weight:normal;}
+#timerDisplay{font-size:26px;font-family:Georgia,serif;margin:4px 0;}
+.clock-svg{display:block;margin:0 auto;}
+#digitalClock{margin-top:4px;font-size:12px;font-family:Georgia,serif;letter-spacing:1px;}
+#dateLabel{font-size:10px;color:#999;margin-top:2px;}
+
+/* wheel picker */
+.wheel-picker-wrap{position:relative;height:44px;overflow:hidden;margin:4px auto 8px;width:80px;cursor:ns-resize;}
+.wheel-picker-wrap::before,.wheel-picker-wrap::after{
+  content:'';position:absolute;left:0;right:0;height:14px;z-index:2;pointer-events:none;
+}
+.wheel-picker-wrap::before{top:0;background:linear-gradient(to bottom,rgba(47,47,45,1),rgba(47,47,45,0));}
+.wheel-picker-wrap::after{bottom:0;background:linear-gradient(to top,rgba(47,47,45,1),rgba(47,47,45,0));}
+.wheel-picker-inner{position:absolute;top:0;left:0;right:0;transition:transform .15s ease;will-change:transform;}
+.wheel-picker-item{height:22px;display:flex;align-items:center;justify-content:center;font-size:16px;font-family:Georgia,serif;color:#ccc;transition:color .1s,font-size .1s;}
+.wheel-picker-item.selected{color:#fff;font-size:20px;font-weight:bold;}
+.wheel-picker-line{position:absolute;left:4px;right:4px;top:50%;height:1px;background:rgba(202,162,74,.5);margin-top:-0.5px;z-index:1;}
+
+/* ===== WIDE PANELS ===== */
+.wide-panels-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.wide-panel{background:var(--panel-bg);border-radius:8px;padding:14px;color:var(--panel-text);}
+.wide-panel h4{margin:0 0 8px;font-size:11px;letter-spacing:1px;color:var(--panel-sub);font-weight:normal;}
+
+/* Files */
+.dropzone{border:2px dashed #777;border-radius:8px;padding:14px 12px;text-align:center;cursor:pointer;font-size:11px;color:#bbb;transition:border-color .2s,background .2s;}
+.dropzone:hover,.dropzone.dragover{border-color:var(--gold);background:rgba(202,162,74,.08);}
+.file-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#262624;border-radius:6px;padding:8px 10px;margin-top:8px;font-size:12px;flex-wrap:wrap;}
+.file-row .fname{flex:1;min-width:120px;word-break:break-all;}
+.file-row .fdeadline{color:#e3c878;font-size:11px;}
+.file-row button{padding:4px 10px;font-size:11px;border-radius:10px;}
+
+/* Music */
+.music-controls{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+.music-controls input[type=range]{flex:1;min-width:80px;}
+#trackTitle{font-size:12px;margin:4px 0 8px;font-style:italic;color:#e3c878;}
+.yt-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.yt-row input[type=text]{flex:1;padding:4px 8px;background:rgba(255,255,255,.1);border:1px solid #555;border-radius:4px;color:#eee;font-size:11px;font-family:inherit;}
+#ytContainer{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:6px;background:#000;margin-top:6px;}
+#ytContainer iframe{position:absolute;top:0;left:0;width:100%;height:100%;}
+.vol-row{display:flex;align-items:center;gap:8px;}
+.vol-row label{font-size:11px;color:#999;white-space:nowrap;}
+.vol-row input{flex:1;}
+.music-source-tabs{display:flex;gap:6px;margin-bottom:10px;}
+.music-source-tabs button{padding:4px 10px;font-size:11px;border-radius:8px;opacity:.6;}
+.music-source-tabs button.active{opacity:1;background:#5a4a1f;color:#f3d878;}
+#localMusicPanel,#ytMusicPanel{display:none;}
+#localMusicPanel.visible,#ytMusicPanel.visible{display:block;}
+.yt-vol-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.yt-vol-row label{font-size:11px;color:#999;}
+.yt-vol-row input{flex:1;}
+
+/* Buttons */
+button{background:var(--gold);border:none;color:#2b2b28;padding:6px 16px;border-radius:14px;font-weight:bold;cursor:pointer;font-family:inherit;}
+button:hover{background:#e0b85a;}
+
+/* Focus mode button */
+#focusModeBtn{background:linear-gradient(135deg,#3a2a08,#6a4a18);color:#f3d878;border:1px solid #8a6a30;}
+#focusModeBtn:hover{background:linear-gradient(135deg,#5a3a10,#8a5a20);}
+
+/* Quote */
+.quote{font-style:italic;font-size:12px;color:#cfcfc8;line-height:1.4;}
+
+/* Status bar */
+.status-bar{display:flex;justify-content:space-between;margin-top:12px;font-size:11px;color:#999;letter-spacing:1px;position:relative;z-index:10;}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle;background:#666;}
+.dot.green{background:#4caf50;}
+.dot.blue{background:#5b8fd6;}
+.power-btn{background:#1f1f1d;border:2px solid #555;padding:10px 22px;margin:0;color:#ccc;font-family:inherit;font-weight:bold;font-size:16px;letter-spacing:2px;border-radius:30px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .2s,border-color .2s,color .2s,box-shadow .2s;}
+.power-btn:hover{border-color:var(--gold);color:#fff;}
+.power-btn.is-on{background:#2a3a26;border-color:#4caf50;color:#dfffd8;box-shadow:0 0 14px 2px rgba(76,175,80,.5);}
+.power-btn .dot{width:12px;height:12px;}
+
+/* System body */
+#systemBody{transition:opacity .35s ease,filter .35s ease;}
+#systemBody.system-off{opacity:.3;filter:grayscale(.7) brightness(.6);pointer-events:none;}
+#systemBody.system-on{opacity:1;filter:none;pointer-events:auto;}
+.power-overlay{
+  position:absolute;top:16px;left:16px;right:16px;bottom:50px;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  color:#ddd;font-size:13px;letter-spacing:1px;background:rgba(0,0,0,.35);
+  border-radius:12px;opacity:0;pointer-events:none;transition:opacity .3s;z-index:4;
+}
+.power-overlay.show{opacity:1;}
+
+/* Footer */
+.footer-note{text-align:center;color:var(--pencil);font-size:12px;margin-top:16px;}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:6px;font-size:13px;opacity:0;transition:.3s;pointer-events:none;z-index:200;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+[contenteditable="true"]{outline:none;border-bottom:1px dashed transparent;cursor:text;}
+[contenteditable="true"]:hover{border-bottom:1px dashed rgba(0,0,0,.4);}
+[contenteditable="true"]:focus{background:rgba(255,255,255,.35);border-bottom:1px dashed #333;}
+.panel [contenteditable="true"]:hover{border-bottom:1px dashed rgba(255,255,255,.5);}
+.panel [contenteditable="true"]:focus{background:rgba(255,255,255,.12);}
+.edit-hint{text-align:center;color:var(--pencil);font-size:11px;margin-top:6px;opacity:.8;}
+
+/* Theme bar */
+.theme-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;}
+.theme-bar span{font-size:11px;color:var(--pencil);white-space:nowrap;}
+.theme-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s,border-color .15s;}
+.theme-swatch:hover,.theme-swatch.active{transform:scale(1.25);border-color:var(--gold);}
+
+/* Settings gear */
+.settings-toggle{position:fixed;top:14px;right:14px;background:var(--ink);color:var(--paper);border:none;border-radius:50%;width:40px;height:40px;font-size:18px;cursor:pointer;z-index:50;box-shadow:0 2px 6px rgba(0,0,0,.3);}
+.settings-drawer{position:fixed;top:0;right:0;bottom:0;width:280px;max-width:85vw;background:var(--paper);border-left:2px solid var(--ink);transform:translateX(100%);transition:transform .25s ease;z-index:60;padding:60px 18px 18px;overflow-y:auto;color:var(--ink);}
+.settings-drawer.open{transform:translateX(0);}
+.settings-drawer h2{font-size:16px;margin-top:0;}
+.settings-drawer label{display:block;font-size:12px;margin:14px 0 4px;color:var(--pencil);}
+.settings-drawer select,.settings-drawer input[type=number]{width:100%;padding:6px;font-family:inherit;border:1px solid #999;border-radius:4px;background:var(--paper);color:var(--ink);}
+.settings-drawer button.apply{margin-top:18px;width:100%;padding:10px;border-radius:6px;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.25s;z-index:55;}
+.overlay.show{opacity:1;pointer-events:auto;}
+
+@media(max-width:800px){
+  .mat-layout{grid-template-columns:1fr;}
+  .phone-zone{min-height:160px;}
+  .top-row{flex-wrap:wrap;}
+  .note{flex:1 1 calc(50% - 6px);}
+  .bottom-row{grid-template-columns:repeat(2,1fr);}
+  .wide-panels-row{grid-template-columns:1fr;}
+}
+@media(max-width:480px){.note{flex:1 1 100%;}.bottom-row{grid-template-columns:1fr;}}
+
+/* ===== iOS-CLEAN POLISH ===== */
+button{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe UI,Roboto,sans-serif;border-radius:14px;border:none;padding:9px 16px;font-weight:600;letter-spacing:.2px;cursor:pointer;transition:transform .12s ease,opacity .12s ease;}
+button:active{transform:scale(.96);opacity:.85;}
+.panel,.wide-panel{border-radius:18px;box-shadow:0 1px 2px rgba(0,0,0,.18),0 8px 20px rgba(0,0,0,.12);}
+.note{border-radius:14px;box-shadow:0 1px 2px rgba(0,0,0,.15),0 6px 14px rgba(0,0,0,.18);}
+.mat{border-radius:24px;}
+.settings-drawer,.toast{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe UI,Roboto,sans-serif;}
+
+/* ===== REMOTE VIEW (dùng khi mở từ điện thoại qua QR) ===== */
+body.remote-mode>.tagline,body.remote-mode>.theme-bar,body.remote-mode>.mat,body.remote-mode>.edit-hint,body.remote-mode>.footer-note,body.remote-mode .settings-toggle,body.remote-mode>h1{display:none!important;}
+#remoteView{display:none;}
+body.remote-mode #remoteView{display:block;max-width:480px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Segoe UI,Roboto,sans-serif;}
+#remoteView h1{font-size:18px;text-align:center;color:var(--gold);margin-bottom:4px;letter-spacing:1px;display:block!important;border:none;}
+#remoteView .subtitle{font-size:11px;color:var(--pencil);text-align:center;margin-bottom:16px;}
+#rmConnStatus{text-align:center;font-size:12px;padding:8px;border-radius:14px;margin-bottom:14px;background:rgba(120,120,120,.15);}
+#rmConnStatus.ok{background:rgba(76,175,80,.18);color:#4caf50;}
+#rmConnStatus.err{background:rgba(192,88,74,.18);color:#c0584a;}
+.rm-section{background:var(--panel-bg);color:var(--panel-text);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 4px 14px rgba(0,0,0,.18);}
+.rm-section h2{font-size:11px;color:var(--panel-sub);letter-spacing:2px;margin-bottom:10px;font-weight:600;}
+#rmTimerDisplay{font-size:38px;font-family:Georgia,serif;text-align:center;color:#fff;margin:6px 0;}
+#rmCurrentTask{font-size:13px;color:var(--gold);text-align:center;margin-bottom:8px;min-height:18px;}
+#rmPhase{font-size:10px;color:#888;text-align:center;letter-spacing:2px;margin-bottom:8px;}
+.rm-btn-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.rm-btn{background:var(--gold);color:#2b2b28;border:none;padding:12px 16px;border-radius:16px;font-weight:700;cursor:pointer;font-size:13px;flex:1;min-width:70px;}
+.rm-btn.gray{background:#444;color:#ddd;}
+.rm-btn.red{background:#5a1a1a;color:#ffb3aa;}
+.rm-btn.green{background:#1a4a20;color:#58d68d;}
+.rm-tasks-list{display:flex;flex-direction:column;gap:8px;}
+.rm-task-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.06);border-radius:12px;font-size:12px;}
+.rm-task-item .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.rm-task-item.done{opacity:.5;}
+.rm-check-btn{margin-left:auto;background:rgba(88,214,141,.18);color:#58d68d;border:none;padding:5px 12px;border-radius:10px;cursor:pointer;font-size:11px;}
+#rmThemes{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.rm-tsw{width:32px;height:32px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
+.rm-tsw.active{border-color:var(--gold);}
+#rmNoteInput{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:12px;color:var(--panel-text);padding:10px;font-family:inherit;font-size:13px;resize:none;}
+#rmProgressBar{height:6px;background:rgba(255,255,255,.15);border-radius:3px;margin-top:10px;}
+#rmProgressFill{height:6px;background:var(--gold);border-radius:3px;transition:width .5s;}
+.rm-vol-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.rm-vol-row label{font-size:11px;color:#888;}
+.rm-vol-row input{flex:1;}
+</style>
+</head>
+<body>
+
+<!-- MQTT client (public broker, dùng để đồng bộ Desktop <-> Điện thoại qua Internet thật) -->
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+
+<!-- Focus Mode Pro Overlay -->
+<div id="focusOverlay">
+  <div id="focusModeTitle">⏳ FOCUS MODE PRO</div>
+  <div id="focusPhase">FOCUS SESSION</div>
+  <div id="focusCurrentTask"></div>
+  <div id="focusRingContainer">
+    <svg id="focusRingSvg" viewBox="0 0 200 200" width="200" height="200">
+      <circle id="focusRingBg" cx="100" cy="100" r="88"/>
+      <circle id="focusRingFill" cx="100" cy="100" r="88" stroke-dasharray="553" stroke-dashoffset="0"/>
+    </svg>
+    <div id="focusTimerBig">25:00</div>
+  </div>
+  <div id="focusProgressBar"><div id="focusProgressFill" style="width:0%"></div></div>
+  <div id="focusStatus">Sẵn sàng tập trung</div>
+  <div class="focus-btns">
+    <button id="focusStartBtn">▶ BẮT ĐẦU</button>
+    <button id="focusPauseBtn" style="display:none">⏸ TẠM DỪNG</button>
+    <button id="focusSkipBtn" style="display:none;background:#333;color:#ccc;">⏭ BỎ QUA</button>
+    <button id="focusStopBtn" style="background:#5a1a1a;color:#ffb3aa;">✕ DỪNG</button>
+  </div>
+  <div id="focusEscHint">Nhấn ESC để thoát • Tự động Focus → Nghỉ → Focus</div>
+</div>
+
+<!-- Settings -->
+<button class="settings-toggle" id="settingsToggle" title="Cài đặt">⚙</button>
+<div class="overlay" id="overlay"></div>
+<div class="settings-drawer" id="settingsDrawer">
+  <h2>⚙ Cài đặt</h2>
+  <label>Số task hiển thị</label>
+  <select id="taskCountSelect"><option value="2">2 task</option><option value="3">3 task</option><option value="4" selected>4 task</option></select>
+  <label>Focus mặc định (phút)</label>
+  <input type="number" id="defaultMinutesInput" value="25" min="1" max="180">
+  <label>Nghỉ giải lao (phút)</label>
+  <input type="number" id="breakMinutesInput" value="5" min="1" max="60">
+  <label>Cảnh báo điện thoại</label>
+  <select id="alertModeSelect"><option value="visual" selected>Chỉ hiện cảnh báo</option><option value="vibrate">Cảnh báo + rung</option><option value="off">Tắt</option></select>
+  <button class="apply" id="applySettings">Áp dụng</button>
+</div>
+
+<!-- MAIN -->
+<h1>SMART STICKY NOTE DESK MAT</h1>
+<div class="tagline">Focus better. Plan smarter. Achieve together. — click một note để hoàn thành, kéo thả để sắp xếp.</div>
+
+<!-- Theme bar -->
+<div class="theme-bar">
+  <span>Giao diện:</span>
+  <div class="theme-swatch active" data-theme="default" style="background:linear-gradient(135deg,#f2d96b,#e8a7a0)" title="Mặc định"></div>
+  <div class="theme-swatch" data-theme="paper" style="background:linear-gradient(135deg,#f5f0e8,#e0c890)" title="Paper"></div>
+  <div class="theme-swatch" data-theme="dark" style="background:linear-gradient(135deg,#1a1a18,#5a4a1f)" title="Dark"></div>
+  <div class="theme-swatch" data-theme="coffee" style="background:linear-gradient(135deg,#2c1e0e,#7a5a18)" title="Coffee"></div>
+  <div class="theme-swatch" data-theme="forest" style="background:linear-gradient(135deg,#1a2c18,#2a4020)" title="Forest"></div>
+  <div class="theme-swatch" data-theme="glass" style="background:linear-gradient(135deg,#1a0a3a,#0a3a2a)" title="Glass"></div>
+  <div class="theme-swatch" data-theme="programmer" style="background:linear-gradient(135deg,#0d1117,#1a3a10)" title="Programmer"></div>
+</div>
+
+<div class="mat">
+  <div id="systemBody" class="system-off">
+    <div class="mat-layout">
+
+      <!-- LEFT COLUMN -->
+      <div class="mat-left">
+
+        <!-- STICKY NOTES (drag & drop) -->
+        <div class="top-row" id="notesRow">
+          <div class="note note1" data-id="0" draggable="true">
+            <span class="num">①</span><span class="led"></span>
+            <button class="del-btn" title="Xóa note">✕</button>
+            <h3 contenteditable="true" spellcheck="false">Math</h3>
+            <p contenteditable="true" spellcheck="false">Practice</p>
+            <div class="time"><span><input type="text" value="30 min" class="dur-input"></span><span><input type="text" value="16:00" class="time-input"></span></div>
+          </div>
+          <div class="note note2" data-id="1" draggable="true">
+            <span class="num">②</span><span class="led"></span>
+            <button class="del-btn" title="Xóa note">✕</button>
+            <h3 contenteditable="true" spellcheck="false">English</h3>
+            <p contenteditable="true" spellcheck="false">Essay Draft</p>
+            <div class="time"><span><input type="text" value="45 min" class="dur-input"></span><span><input type="text" value="17:00" class="time-input"></span></div>
+          </div>
+          <div class="note note3" data-id="2" draggable="true">
+            <span class="num">③</span><span class="led"></span>
+            <button class="del-btn" title="Xóa note">✕</button>
+            <h3 contenteditable="true" spellcheck="false">Physics</h3>
+            <p contenteditable="true" spellcheck="false">Worksheet</p>
+            <div class="time"><span><input type="text" value="30 min" class="dur-input"></span><span><input type="text" value="19:00" class="time-input"></span></div>
+          </div>
+          <div class="note note4" data-id="3" draggable="true">
+            <span class="num">④</span><span class="led"></span>
+            <button class="del-btn" title="Xóa note">✕</button>
+            <h3 contenteditable="true" spellcheck="false">Review</h3>
+            <p contenteditable="true" spellcheck="false">Flashcards</p>
+            <div class="time"><span><input type="text" value="20 min" class="dur-input"></span><span><input type="text" value="20:00" class="time-input"></span></div>
+          </div>
+        </div>
+
+        <!-- PANELS ROW -->
+        <div class="bottom-row">
+          <!-- FOCUS TIMER -->
+          <div class="panel">
+            <h4>FOCUS TIMER</h4>
+            <div id="timerDisplay">25:00</div>
+            <!-- Wheel Picker -->
+            <div class="wheel-picker-wrap" id="wheelPickerWrap">
+              <div class="wheel-picker-line"></div>
+              <div class="wheel-picker-inner" id="wheelPickerInner"></div>
+            </div>
+            <div style="font-size:10px;color:#888;margin-bottom:6px;">phút</div>
+            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+              <button id="timerBtn">START</button>
+              <button id="focusModeBtn" title="Chế độ tập trung toàn màn hình">🎯 FOCUS</button>
+            </div>
+          </div>
+
+          <!-- CLOCK -->
+          <div class="panel">
+            <h4>GIỜ THỰC</h4>
+            <svg class="clock-svg" id="analogClock" viewBox="0 0 100 100" width="78" height="78">
+              <circle cx="50" cy="50" r="47" fill="#1f1f1d" stroke="#666" stroke-width="2"/>
+              <g id="clockTicks"></g>
+              <line id="hourHand" x1="50" y1="50" x2="50" y2="30" stroke="#eee" stroke-width="3.2" stroke-linecap="round"/>
+              <line id="minHand" x1="50" y1="50" x2="50" y2="20" stroke="#ccc" stroke-width="2.2" stroke-linecap="round"/>
+              <line id="secHand" x1="50" y1="50" x2="50" y2="16" stroke="#c0584a" stroke-width="1"/>
+              <circle cx="50" cy="50" r="2.6" fill="#eee"/>
+            </svg>
+            <div id="digitalClock">--:--:--</div>
+            <div id="dateLabel">--</div>
+          </div>
+
+          <!-- QUOTE -->
+          <div class="panel">
+            <h4 contenteditable="true" spellcheck="false">STAY FOCUSED</h4>
+            <div class="quote" id="encourageBox" contenteditable="true" spellcheck="false">You've got this! 🍀</div>
+          </div>
+        </div>
+
+        <!-- WIDE PANELS -->
+        <div class="wide-panels-row">
+          <!-- FILES -->
+          <div class="wide-panel">
+            <h4>📁 QUÉT FILE & TỰ ĐẶT DEADLINE</h4>
+            <div class="dropzone" id="dropzone">
+              Kéo thả file vào đây, hoặc bấm để chọn — hệ thống tự đọc tên file hoặc ước lượng deadline.
+              <input type="file" id="fileInput" multiple style="display:none">
+            </div>
+            <div id="fileList"></div>
+          </div>
+
+          <!-- MUSIC -->
+          <div class="wide-panel">
+            <h4>🎵 TRÌNH NGHE NHẠC</h4>
+            <div class="music-source-tabs">
+              <button id="tabLocal" class="active" onclick="switchMusicTab('local')">📂 File local</button>
+              <button id="tabYT" onclick="switchMusicTab('yt')">▶ YouTube</button>
+            </div>
+
+            <!-- Local Music -->
+            <div id="localMusicPanel" class="visible">
+              <audio id="audioPlayer"></audio>
+              <div id="trackTitle" contenteditable="true" spellcheck="false">Chưa có bài hát nào</div>
+              <div class="music-controls">
+                <button id="playPauseBtn">▶️ Play</button>
+                <div class="vol-row" style="flex:1;gap:6px;display:flex;align-items:center;">
+                  <label>🔊</label>
+                  <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.7">
+                </div>
+              </div>
+              <input type="file" id="audioFileInput" accept="audio/*">
+            </div>
+
+            <!-- YouTube Music -->
+            <div id="ytMusicPanel">
+              <div class="yt-row">
+                <input type="text" id="ytUrlInput" placeholder="Dán link YouTube / Playlist...">
+                <button id="ytLoadBtn">Tải</button>
+              </div>
+              <div id="ytContainer" style="display:none"></div>
+              <div class="yt-vol-row">
+                <label>🔊</label>
+                <input type="range" id="ytVolumeSlider" min="0" max="100" step="1" value="70">
+                <span id="ytVolLabel" style="font-size:11px;color:#999;">70%</span>
+              </div>
+              <div style="font-size:10px;color:#666;margin-top:6px;">Lưu ý: YouTube yêu cầu autoplay user gesture. Nhấn Play trong iframe sau khi tải.</div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end mat-left -->
+
+      <!-- RIGHT: Phone Zone + QR -->
+      <div class="phone-zone" id="phoneZone">
+        <div class="icon">📱</div>
+        <div contenteditable="true" spellcheck="false" id="phoneLabel" style="font-size:10px;line-height:1.4;">PHONE<br>PARKING<br>ZONE</div>
+        <img id="qrImg" width="120" height="120" style="display:none;margin-top:8px;border-radius:8px;background:#fff;" alt="QR Remote">
+        <div id="qrStatus" style="display:none;"></div>
+        <div id="phoneConnStatus" class="waiting" style="display:none;">⏳ Chờ kết nối</div>
+        <div id="phoneRemoteInfo" style="display:none;font-size:9px;color:#888;margin-top:6px;line-height:1.4;">
+          Quét QR bằng camera điện thoại để mở Remote
+        </div>
+      </div>
+
+    </div><!-- mat-layout -->
+  </div><!-- systemBody -->
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span><button class="power-btn" id="powerBtn"><span class="dot" id="powerDot"></span>POWER</button></span>
+    <span><button id="qrBtn" style="background:#2a3a52;color:#8ab8d4;font-size:11px;padding:6px 14px;">📱 QR Remote</button></span>
+    <span><button id="installBtn" style="background:#2a4a30;color:#7fd99a;font-size:11px;padding:6px 14px;">📲 Cài Đặt App</button></span>
+    <span><span class="dot blue"></span><span contenteditable="true" spellcheck="false">BLUETOOTH</span></span>
+  </div>
+
+  <div class="power-overlay" id="powerOverlay">⏻ Bấm nút POWER để khởi động hệ thống</div>
+</div>
+
+<div class="edit-hint">✏️ Bấm trực tiếp vào text để sửa • Kéo thả note để sắp xếp • Bấm ✕ để xóa note</div>
+<div class="footer-note">Tasks done: <span id="doneCount">0</span> / <span id="totalCount">4</span></div>
+<div class="toast" id="toast"></div>
+
+<!-- Remote View thật (hiện khi mở link kèm ?remote=1 từ QR, dùng MQTT public broker để đồng bộ qua Internet) -->
+<div id="remoteView">
+  <h1>📱 DESK MAT REMOTE</h1>
+  <div class="subtitle">Điều khiển từ điện thoại</div>
+  <div id="rmConnStatus">⏳ Đang kết nối...</div>
+
+  <div class="rm-section">
+    <h2>⏱ TIMER & FOCUS</h2>
+    <div id="rmPhase">---</div>
+    <div id="rmCurrentTask">---</div>
+    <div id="rmTimerDisplay">--:--</div>
+    <div id="rmProgressBar"><div id="rmProgressFill" style="width:0%"></div></div>
+    <div class="rm-btn-row" style="margin-top:12px;">
+      <button class="rm-btn green" onclick="rmSend('timer_start')">▶ Start</button>
+      <button class="rm-btn gray" onclick="rmSend('timer_pause')">⏸ Pause</button>
+      <button class="rm-btn gray" onclick="rmSend('focus_skip')">⏭ Skip</button>
+      <button class="rm-btn red" onclick="rmSend('timer_stop')">✕ Stop</button>
+    </div>
+    <div class="rm-btn-row" style="margin-top:8px;">
+      <button class="rm-btn" onclick="rmSend('focus_mode_open')" style="background:#3a2a08;color:#f3d878;">🎯 Focus Mode</button>
+    </div>
+  </div>
+
+  <div class="rm-section">
+    <h2>📌 TASKS</h2>
+    <div class="rm-tasks-list" id="rmTasksList"></div>
+  </div>
+
+  <div class="rm-section">
+    <h2>🎵 NHẠC</h2>
+    <div class="rm-btn-row">
+      <button class="rm-btn" onclick="rmSend('music_play')">▶ Play</button>
+      <button class="rm-btn gray" onclick="rmSend('music_pause')">⏸ Pause</button>
+    </div>
+    <div class="rm-vol-row">
+      <label>🔊</label>
+      <input type="range" min="0" max="100" value="70" oninput="rmSend('music_vol:'+this.value)">
+    </div>
+  </div>
+
+  <div class="rm-section">
+    <h2>🎨 GIAO DIỆN</h2>
+    <div id="rmThemes">
+      <div class="rm-tsw" style="background:linear-gradient(135deg,#f2d96b,#e8a7a0)" onclick="rmSend('theme:default')" title="Mặc định"></div>
+      <div class="rm-tsw" style="background:linear-gradient(135deg,#f5f0e8,#e0c890)" onclick="rmSend('theme:paper')" title="Paper"></div>
+      <div class="rm-tsw" style="background:linear-gradient(135deg,#1a1a18,#5a4a1f)" onclick="rmSend('theme:dark')" title="Dark"></div>
+      <div class="rm-tsw" style="background:linear-gradient(135deg,#2c1e0e,#7a5a18)" onclick="rmSend('theme:coffee')" title="Coffee"></div>
+      <div class="rm-tsw" style="background:linear-gradient(135deg,#1a2c18,#2a4020)" onclick="rmSend('theme:forest')" title="Forest"></div>
+      <div class="rm-tsw" style="background:linear-gradient(135deg,#1a0a3a,#0a3a2a)" onclick="rmSend('theme:glass')" title="Glass"></div>
+      <div class="rm-tsw" style="background:linear-gradient(135deg,#0d1117,#1a3a10)" onclick="rmSend('theme:programmer')" title="Programmer"></div>
+    </div>
+  </div>
+
+  <div class="rm-section">
+    <h2>📝 GỬI STICKY NOTE NHANH</h2>
+    <textarea id="rmNoteInput" rows="3" placeholder="Nhập nội dung note..."></textarea>
+    <button class="rm-btn" style="width:100%;margin-top:8px;" onclick="rmSendNote()">📌 Gửi lên Desktop</button>
+  </div>
+
+  <div class="rm-section">
+    <h2>📊 TIẾN ĐỘ HÔM NAY</h2>
+    <div id="rmProgressInfo" style="font-size:13px;text-align:center;color:var(--panel-sub);">Đang tải...</div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CORE STATE
+============================================================ */
+let allNotes = Array.from(document.querySelectorAll('.note'));
+const notesRow = document.getElementById('notesRow');
+const doneCountEl = document.getElementById('doneCount');
+const totalCountEl = document.getElementById('totalCount');
+const toast = document.getElementById('toast');
+let doneCount = 0;
+let alertMode = 'visual';
+let systemOn = false;
+
+/* ---- TOAST ---- */
+function showToast(msg){
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),1800);
+}
+
+/* ---- THEME ---- */
+const THEMES = ['default','paper','dark','coffee','forest','glass','programmer'];
+let currentTheme = localStorage.getItem('deskmat_theme') || 'default';
+
+function applyTheme(name){
+  currentTheme = name;
+  THEMES.forEach(t=>document.body.classList.remove('theme-'+t));
+  if(name !== 'default') document.body.classList.add('theme-'+name);
+  localStorage.setItem('deskmat_theme', name);
+  document.querySelectorAll('.theme-swatch').forEach(s=>{
+    s.classList.toggle('active', s.dataset.theme === name);
+  });
+}
+document.querySelectorAll('.theme-swatch').forEach(s=>{
+  s.addEventListener('click',()=>applyTheme(s.dataset.theme));
+});
+applyTheme(currentTheme);
+
+/* ---- NOTES: drag & drop ---- */
+let dragSrc = null;
+
+function updateNoteNumbers(){
+  allNotes = Array.from(notesRow.querySelectorAll('.note'));
+  const nums=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩'];
+  allNotes.forEach((n,i)=>{ const numEl=n.querySelector('.num'); if(numEl) numEl.textContent=nums[i]||'⓪'; });
+  totalCountEl.textContent = allNotes.length;
+}
+
+function attachNoteEvents(note){
+  // click to complete
+  note.addEventListener('click',(e)=>{
+    if(e.target.tagName==='INPUT'||e.target.isContentEditable||e.target.closest('[contenteditable="true"]')) return;
+    if(e.target.classList.contains('del-btn')) return;
+    if(note.classList.contains('overdue')) note.classList.remove('overdue');
+    if(!note.classList.contains('done')){
+      note.classList.add('done'); doneCount++;
+      showToast('✅ Hoàn thành: '+(note.querySelector('h3')||{textContent:''}).textContent);
+    } else {
+      note.classList.remove('done'); doneCount--;
+      showToast('↩ Bỏ tick: '+(note.querySelector('h3')||{textContent:''}).textContent);
+    }
+    doneCountEl.textContent = doneCount;
+    broadcastState();
+  });
+
+  // delete button
+  const delBtn = note.querySelector('.del-btn');
+  if(delBtn){
+    delBtn.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      if(note.classList.contains('done')) doneCount--;
+      note.remove();
+      allNotes = allNotes.filter(n=>n!==note);
+      doneCountEl.textContent = doneCount;
+      updateNoteNumbers();
+      showToast('🗑 Đã xóa note');
+      broadcastState();
+    });
+  }
+
+  // drag events
+  note.addEventListener('dragstart',(e)=>{ dragSrc=note; note.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
+  note.addEventListener('dragend',()=>{ note.classList.remove('dragging'); document.querySelectorAll('.note').forEach(n=>n.classList.remove('drag-over')); });
+  note.addEventListener('dragover',(e)=>{ e.preventDefault(); if(note!==dragSrc){note.classList.add('drag-over');} });
+  note.addEventListener('dragleave',()=>note.classList.remove('drag-over'));
+  note.addEventListener('drop',(e)=>{
+    e.preventDefault(); note.classList.remove('drag-over');
+    if(!dragSrc||dragSrc===note) return;
+    const parent=notesRow;
+    const srcIdx=[...parent.children].indexOf(dragSrc);
+    const tgtIdx=[...parent.children].indexOf(note);
+    if(srcIdx<tgtIdx) parent.insertBefore(dragSrc,note.nextSibling);
+    else parent.insertBefore(dragSrc,note);
+    updateNoteNumbers();
+    showToast('↕ Đã sắp xếp lại note');
+  });
+
+  // stop propagation for inputs
+  note.querySelectorAll('input,[contenteditable="true"]').forEach(el=>el.addEventListener('click',e=>e.stopPropagation()));
+}
+
+allNotes.forEach(attachNoteEvents);
+updateNoteNumbers();
+
+/* ---- ADD NOTE FROM FILE ---- */
+let noteColorCycle = 1;
+function addNoteFromFile(filename, deadline){
+  noteColorCycle = (noteColorCycle%4)+1;
+  const shortName = filename.length>16 ? filename.slice(0,14)+'…' : filename;
+  const note = document.createElement('div');
+  note.className = 'note note'+noteColorCycle;
+  note.draggable = true;
+  note.innerHTML = `<span class="num"></span><span class="led"></span><button class="del-btn" title="Xóa note">✕</button><h3 contenteditable="true" spellcheck="false">${shortName}</h3><p contenteditable="true" spellcheck="false">Từ file đính kèm</p><div class="time"><span><input type="text" value="—" class="dur-input"></span><span><input type="text" value="${formatDeadline(deadline)}" class="time-input"></span></div>`;
+  notesRow.appendChild(note);
+  attachNoteEvents(note);
+  allNotes.push(note);
+  updateNoteNumbers();
+}
+
+/* ---- SETTINGS ---- */
+const settingsToggle = document.getElementById('settingsToggle');
+const settingsDrawer = document.getElementById('settingsDrawer');
+const overlay = document.getElementById('overlay');
+const taskCountSelect = document.getElementById('taskCountSelect');
+const defaultMinutesInput = document.getElementById('defaultMinutesInput');
+const breakMinutesInput = document.getElementById('breakMinutesInput');
+const alertModeSelect = document.getElementById('alertModeSelect');
+const applySettings = document.getElementById('applySettings');
+
+function openDrawer(){ settingsDrawer.classList.add('open'); overlay.classList.add('show'); }
+function closeDrawer(){ settingsDrawer.classList.remove('open'); overlay.classList.remove('show'); }
+settingsToggle.addEventListener('click', openDrawer);
+overlay.addEventListener('click', closeDrawer);
+
+applySettings.addEventListener('click',()=>{
+  const count = parseInt(taskCountSelect.value);
+  allNotes.forEach((n,i)=>{ n.style.display = i<count?'':'none'; });
+  let mins = parseInt(defaultMinutesInput.value)||25;
+  mins = Math.min(Math.max(mins,1),180);
+  defaultMinutesInput.value = mins;
+  focusDuration = mins;
+  breakDuration = parseInt(breakMinutesInput.value)||5;
+  if(!timerInterval){ totalSeconds=mins*60; timerDisplay.textContent=formatTime(totalSeconds); }
+  updateWheelPicker(mins);
+  alertMode = alertModeSelect.value;
+  showToast('✅ Đã áp dụng cài đặt');
+  closeDrawer();
+});
+
+/* ---- WHEEL PICKER ---- */
+const MIN_OPTIONS = [1,2,3,4,5,6,7,8,9,10,12,15,18,20,25,30,35,40,45,50,55,60,75,90,105,120,150,180];
+let wheelPickerValue = 25;
+const wheelInner = document.getElementById('wheelPickerInner');
+const ITEM_H = 22;
+
+function buildWheelPicker(){
+  wheelInner.innerHTML = '';
+  MIN_OPTIONS.forEach((v,i)=>{
+    const div = document.createElement('div');
+    div.className = 'wheel-picker-item' + (v===wheelPickerValue?' selected':'');
+    div.textContent = v;
+    div.dataset.val = v;
+    wheelInner.appendChild(div);
+  });
+  scrollWheelTo(wheelPickerValue, false);
+}
+
+function scrollWheelTo(val, animate){
+  const idx = MIN_OPTIONS.indexOf(val);
+  if(idx<0) return;
+  const offset = -(idx * ITEM_H) + ITEM_H/2;
+  wheelInner.style.transition = animate ? 'transform .2s ease' : 'none';
+  wheelInner.style.transform = `translateY(${offset}px)`;
+  wheelInner.querySelectorAll('.wheel-picker-item').forEach((el,i)=>{
+    el.classList.toggle('selected', i===idx);
+  });
+}
+
+function updateWheelPicker(val){
+  wheelPickerValue = val;
+  if(!MIN_OPTIONS.includes(val)){
+    const nearest = MIN_OPTIONS.reduce((a,b)=>Math.abs(b-val)<Math.abs(a-val)?b:a);
+    wheelPickerValue = nearest;
+  }
+  scrollWheelTo(wheelPickerValue, true);
+  if(!timerInterval){
+    totalSeconds = wheelPickerValue*60;
+    timerDisplay.textContent = formatTime(totalSeconds);
+  }
+}
+
+// Touch/Mouse scroll on wheel picker
+let wheelDragY = null, wheelStartOffset = 0;
+const wrap = document.getElementById('wheelPickerWrap');
+
+function getWheelOffset(){ const m=wheelInner.style.transform.match(/translateY\(([^)]+)px\)/); return m?parseFloat(m[1]):0; }
+
+wrap.addEventListener('mousedown',(e)=>{
+  wheelDragY = e.clientY;
+  wheelStartOffset = getWheelOffset();
+  e.preventDefault();
+});
+window.addEventListener('mousemove',(e)=>{
+  if(wheelDragY===null) return;
+  const dy = e.clientY - wheelDragY;
+  wheelInner.style.transition = 'none';
+  wheelInner.style.transform = `translateY(${wheelStartOffset+dy}px)`;
+});
+window.addEventListener('mouseup',(e)=>{
+  if(wheelDragY===null) return;
+  const dy = e.clientY - wheelDragY;
+  wheelDragY = null;
+  const raw = wheelStartOffset + dy;
+  // find nearest index
+  const idx = Math.round(-(raw - ITEM_H/2) / ITEM_H);
+  const clampedIdx = Math.max(0, Math.min(MIN_OPTIONS.length-1, idx));
+  wheelPickerValue = MIN_OPTIONS[clampedIdx];
+  scrollWheelTo(wheelPickerValue, true);
+  if(!timerInterval){
+    totalSeconds = wheelPickerValue*60;
+    timerDisplay.textContent = formatTime(totalSeconds);
+    timerBtn.textContent = 'START';
+  }
+});
+
+wrap.addEventListener('touchstart',(e)=>{ wheelDragY=e.touches[0].clientY; wheelStartOffset=getWheelOffset(); e.preventDefault(); },{passive:false});
+wrap.addEventListener('touchmove',(e)=>{ if(wheelDragY===null) return; const dy=e.touches[0].clientY-wheelDragY; wheelInner.style.transition='none'; wheelInner.style.transform=`translateY(${wheelStartOffset+dy}px)`; e.preventDefault(); },{passive:false});
+wrap.addEventListener('touchend',(e)=>{ if(wheelDragY===null) return; const dy=e.changedTouches[0].clientY-wheelDragY; wheelDragY=null; const raw=wheelStartOffset+dy; const idx=Math.round(-(raw-ITEM_H/2)/ITEM_H); const clampedIdx=Math.max(0,Math.min(MIN_OPTIONS.length-1,idx)); wheelPickerValue=MIN_OPTIONS[clampedIdx]; scrollWheelTo(wheelPickerValue,true); if(!timerInterval){totalSeconds=wheelPickerValue*60;timerDisplay.textContent=formatTime(totalSeconds);timerBtn.textContent='START';} });
+
+wrap.addEventListener('wheel',(e)=>{ e.preventDefault(); if(e.deltaY>0){const i=Math.min(MIN_OPTIONS.indexOf(wheelPickerValue)+1,MIN_OPTIONS.length-1);updateWheelPicker(MIN_OPTIONS[i]);}else{const i=Math.max(MIN_OPTIONS.indexOf(wheelPickerValue)-1,0);updateWheelPicker(MIN_OPTIONS[i]);} },{passive:false});
+
+buildWheelPicker();
+
+/* ---- FOCUS TIMER ---- */
+let totalSeconds = 25*60;
+let timerInterval = null;
+let focusDuration = 25;
+let breakDuration = 5;
+const timerDisplay = document.getElementById('timerDisplay');
+const timerBtn = document.getElementById('timerBtn');
+const encourageBox = document.getElementById('encourageBox');
+
+function formatTime(s){
+  return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+}
+
+timerBtn.addEventListener('click',()=>{
+  if(timerInterval){
+    clearInterval(timerInterval); timerInterval=null;
+    timerBtn.textContent='START'; encourageBox.textContent='Đã tạm dừng 😅'; return;
+  }
+  if(timerBtn.textContent==='RESTART'){
+    totalSeconds = wheelPickerValue*60;
+    timerDisplay.textContent = formatTime(totalSeconds);
+  }
+  timerBtn.textContent='PAUSE'; encourageBox.textContent="You've got this 🍀!";
+  timerInterval = setInterval(()=>{
+    totalSeconds--;
+    timerDisplay.textContent = formatTime(totalSeconds);
+    broadcastState();
+    if(totalSeconds<=0){
+      clearInterval(timerInterval); timerInterval=null;
+      encourageBox.textContent='🎉 Hoàn thành phiên tập trung!';
+      timerBtn.textContent='RESTART'; timerDisplay.textContent='00:00'; return;
+    }
+    if(totalSeconds===300) encourageBox.textContent='Còn 5 phút, giữ nhịp!';
+    if(totalSeconds===60) encourageBox.textContent='Gần xong rồi, cố lên!';
+  },1000);
+});
+
+/* ---- FOCUS MODE PRO ---- */
+const focusOverlay = document.getElementById('focusOverlay');
+const focusTimerBig = document.getElementById('focusTimerBig');
+const focusCurrentTask = document.getElementById('focusCurrentTask');
+const focusStatus = document.getElementById('focusStatus');
+const focusPhase = document.getElementById('focusPhase');
+const focusStartBtn = document.getElementById('focusStartBtn');
+const focusPauseBtn = document.getElementById('focusPauseBtn');
+const focusSkipBtn = document.getElementById('focusSkipBtn');
+const focusStopBtn = document.getElementById('focusStopBtn');
+const focusRingFill = document.getElementById('focusRingFill');
+const focusProgressFill = document.getElementById('focusProgressFill');
+
+const RING_CIRCUMFERENCE = 2 * Math.PI * 88; // r=88
+let focusInterval = null;
+let focusSeconds = 0;
+let focusTotalSeconds = 0;
+let focusPhaseType = 'focus'; // 'focus' | 'break'
+let focusRunning = false;
+let focusSessions = 0;
+let focusAutoMode = false;
+
+function getCurrentTaskName(){
+  const active = allNotes.find(n=>!n.classList.contains('done'));
+  if(active) return (active.querySelector('h3')||{textContent:''}).textContent || '';
+  return '';
+}
+
+function updateFocusRing(){
+  const ratio = focusTotalSeconds>0 ? focusSeconds/focusTotalSeconds : 0;
+  const offset = RING_CIRCUMFERENCE * (1 - ratio);
+  focusRingFill.style.strokeDasharray = RING_CIRCUMFERENCE;
+  focusRingFill.style.strokeDashoffset = offset;
+  focusProgressFill.style.width = (ratio*100)+'%';
+}
+
+function startFocusPhase(type){
+  focusPhaseType = type;
+  const dur = type==='focus' ? focusDuration*60 : breakDuration*60;
+  focusSeconds = dur;
+  focusTotalSeconds = dur;
+  focusPhase.textContent = type==='focus' ? '🎯 FOCUS SESSION' : '☕ BREAK TIME';
+  focusStatus.textContent = type==='focus' ? 'Tập trung – không xao nhãng!' : 'Thư giãn, hít thở...';
+  focusCurrentTask.textContent = type==='focus' ? (getCurrentTaskName() || '') : '';
+  updateFocusRing();
+  focusTimerBig.textContent = formatTime(focusSeconds);
+}
+
+function openFocusMode(){
+  focusOverlay.classList.add('active');
+  if(!focusRunning){
+    startFocusPhase('focus');
+  }
+  document.addEventListener('keydown', onFocusKey);
+}
+
+function closeFocusMode(){
+  focusOverlay.classList.remove('active');
+  document.removeEventListener('keydown', onFocusKey);
+}
+
+function onFocusKey(e){ if(e.key==='Escape') closeFocusMode(); }
+
+document.getElementById('focusModeBtn').addEventListener('click', openFocusMode);
+focusStopBtn.addEventListener('click',()=>{
+  clearInterval(focusInterval); focusInterval=null; focusRunning=false;
+  focusStartBtn.style.display=''; focusPauseBtn.style.display='none'; focusSkipBtn.style.display='none';
+  startFocusPhase('focus');
+  closeFocusMode();
+  timerBtn.textContent='START'; encourageBox.textContent='Phiên focus đã dừng.';
+});
+
+focusStartBtn.addEventListener('click',()=>{
+  if(focusRunning) return;
+  focusRunning = true; focusAutoMode = true;
+  focusStartBtn.style.display='none';
+  focusPauseBtn.style.display='';
+  focusSkipBtn.style.display='';
+  focusInterval = setInterval(()=>{
+    focusSeconds--;
+    focusTimerBig.textContent = formatTime(focusSeconds);
+    updateFocusRing();
+    broadcastState();
+    if(focusSeconds<=0){
+      clearInterval(focusInterval); focusInterval=null; focusRunning=false;
+      if(focusPhaseType==='focus'){
+        focusSessions++;
+        focusStatus.textContent = '🎉 Xong! Nghỉ '+breakDuration+' phút.';
+        setTimeout(()=>{ startFocusPhase('break'); focusStartBtn.click(); }, 2000);
+      } else {
+        focusStatus.textContent = '✅ Nghỉ xong! Bắt đầu phiên mới.';
+        setTimeout(()=>{ startFocusPhase('focus'); focusStartBtn.click(); }, 2000);
+      }
+    }
+  },1000);
+});
+
+focusPauseBtn.addEventListener('click',()=>{
+  if(focusRunning){
+    clearInterval(focusInterval); focusInterval=null; focusRunning=false;
+    focusPauseBtn.textContent='▶ Tiếp'; focusStatus.textContent='Đã tạm dừng.';
+  } else {
+    focusStartBtn.click();
+    focusPauseBtn.textContent='⏸ Pause';
+  }
+});
+
+focusSkipBtn.addEventListener('click',()=>{
+  clearInterval(focusInterval); focusInterval=null; focusRunning=false;
+  const next = focusPhaseType==='focus'?'break':'focus';
+  startFocusPhase(next);
+  setTimeout(()=>focusStartBtn.click(),300);
+});
+
+/* ---- ANALOG CLOCK ---- */
+const clockTicks = document.getElementById('clockTicks');
+for(let i=0;i<12;i++){
+  const angle=i*30, rad=(angle-90)*Math.PI/180;
+  const isHour4=i%3===0, r1=isHour4?39:42;
+  const x1=50+r1*Math.cos(rad), y1=50+r1*Math.sin(rad);
+  const x2=50+45*Math.cos(rad), y2=50+45*Math.sin(rad);
+  const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1',x1);line.setAttribute('y1',y1);line.setAttribute('x2',x2);line.setAttribute('y2',y2);
+  line.setAttribute('stroke',isHour4?'#eee':'#777');line.setAttribute('stroke-width',isHour4?2:1);
+  clockTicks.appendChild(line);
+}
+const hourHand=document.getElementById('hourHand'),minHand=document.getElementById('minHand'),secHand=document.getElementById('secHand');
+const digitalClock=document.getElementById('digitalClock'),dateLabel=document.getElementById('dateLabel');
+
+function updateClock(){
+  const now=new Date(), h=now.getHours(), m=now.getMinutes(), s=now.getSeconds();
+  hourHand.setAttribute('transform',`rotate(${(h%12)*30+m*0.5} 50 50)`);
+  minHand.setAttribute('transform',`rotate(${m*6+s*0.1} 50 50)`);
+  secHand.setAttribute('transform',`rotate(${s*6} 50 50)`);
+  digitalClock.textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  dateLabel.textContent=now.toLocaleDateString('vi-VN',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
+}
+updateClock(); setInterval(updateClock,1000);
+
+/* ---- FILE SCANNER ---- */
+const dropzone=document.getElementById('dropzone'),fileInput=document.getElementById('fileInput'),fileListEl=document.getElementById('fileList');
+dropzone.addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',()=>handleFiles(fileInput.files));
+['dragover','dragenter'].forEach(e=>{dropzone.addEventListener(e,ev=>{ev.preventDefault();dropzone.classList.add('dragover');});});
+['dragleave','drop'].forEach(e=>{dropzone.addEventListener(e,ev=>{ev.preventDefault();dropzone.classList.remove('dragover');});});
+dropzone.addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);});
+
+function detectDeadlineFromFilename(name){
+  const patterns=[{re:/(\d{4})[-_.](\d{1,2})[-_.](\d{1,2})/,order:'ymd'},{re:/(\d{1,2})[-_.](\d{1,2})[-_.](\d{4})/,order:'dmy'}];
+  for(const p of patterns){
+    const m=name.match(p.re);
+    if(m){let y,mo,d;if(p.order==='ymd'){y=+m[1];mo=+m[2];d=+m[3];}else{d=+m[1];mo=+m[2];y=+m[3];}
+    const dt=new Date(y,mo-1,d,23,59);if(!isNaN(dt.getTime())&&dt.getFullYear()>2000) return dt;}
+  }return null;
+}
+function estimateDeadlineByType(file){
+  const ext=file.name.split('.').pop().toLowerCase(),now=Date.now(),H=3600000;
+  return new Date(now+({'pdf':48,'docx':48,'doc':48,'xlsx':24,'csv':24,'xls':24,'ppt':72,'pptx':72,'png':4,'jpg':4,'jpeg':4,'gif':4}[ext]||24)*H);
+}
+function formatDeadline(dt){return dt.toLocaleDateString('vi-VN')+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');}
+function handleFiles(fileList){
+  Array.from(fileList).forEach(file=>{
+    const detected=detectDeadlineFromFilename(file.name),deadline=detected||estimateDeadlineByType(file);
+    const source=detected?'phát hiện từ tên file':'ước lượng theo loại file';
+    const row=document.createElement('div');row.className='file-row';
+    row.innerHTML=`<span class="fname">📄 ${file.name}</span><span class="fdeadline">⏰ ${formatDeadline(deadline)} <em style="color:#888;">(${source})</em></span><button class="add-note-btn">+ Note</button>`;
+    row.querySelector('.add-note-btn').addEventListener('click',()=>{addNoteFromFile(file.name,deadline);showToast('📌 Đã tạo note từ: '+file.name);});
+    fileListEl.appendChild(row);
+  });
+}
+
+/* Nhận file gửi từ Remote (điện thoại) qua MQTT, dạng base64 (giới hạn nhỏ ~300KB) */
+function handleRemoteFile(payload){
+  // payload: {name, mime, data(base64), size}
+  try{
+    const byteChars = atob(payload.data);
+    const bytes = new Uint8Array(byteChars.length);
+    for(let i=0;i<byteChars.length;i++) bytes[i]=byteChars.charCodeAt(i);
+    const blob = new Blob([bytes], {type: payload.mime || 'application/octet-stream'});
+    const url = URL.createObjectURL(blob);
+    const deadline = estimateDeadlineByType({name:payload.name});
+    const row=document.createElement('div');row.className='file-row';
+    const isImg = (payload.mime||'').startsWith('image/');
+    row.innerHTML = `<span class="fname">${isImg?'🖼️':'📄'} ${payload.name} <em style="color:#888;font-size:10px;">(từ điện thoại)</em></span>`+
+      `<span class="fdeadline">⏰ ${formatDeadline(deadline)}</span>`+
+      `<a href="${url}" download="${payload.name}" style="margin-right:6px;color:#7fc9e0;font-size:11px;">⬇ Tải</a>`+
+      `<button class="add-note-btn">+ Note</button>`;
+    row.querySelector('.add-note-btn').addEventListener('click',()=>{addNoteFromFile(payload.name,deadline);showToast('📌 Đã tạo note từ: '+payload.name);});
+    fileListEl.appendChild(row);
+    if(isImg){
+      const imgPrev = document.createElement('img');
+      imgPrev.src = url; imgPrev.style.cssText='max-width:120px;max-height:90px;display:block;margin-top:4px;border-radius:6px;';
+      row.appendChild(imgPrev);
+    }
+    showToast('📱 Đã nhận file từ điện thoại: '+payload.name);
+  }catch(ex){ showToast('⚠️ Lỗi nhận file từ điện thoại'); }
+}
+
+/* ---- PHONE ZONE ---- */
+document.getElementById('phoneLabel').addEventListener('click',e=>e.stopPropagation());
+const phoneZone=document.getElementById('phoneZone');
+let phoneInZone=true;
+phoneZone.addEventListener('click',()=>{
+  phoneInZone=!phoneInZone;
+  if(phoneInZone){
+    phoneZone.classList.remove('alert');
+    showToast('📱 Điện thoại đã đặt vào khu vực — tốt lắm!');
+  } else {
+    if(alertMode==='off'){showToast('⚠️ Đã nhắc (cảnh báo đang tắt)');return;}
+    phoneZone.classList.add('alert');
+    showToast('🚨 Cảm biến: Bạn vừa cầm điện thoại lên!');
+    if(alertMode==='vibrate'&&navigator.vibrate) navigator.vibrate([120,60,120]);
+  }
+});
+
+/* ---- QR PHONE COMPANION (dùng MQTT broker công khai để đồng bộ thật qua Internet) ---- */
+const qrImg = document.getElementById('qrImg');
+const qrStatus = document.getElementById('qrStatus');
+const phoneConnStatus = document.getElementById('phoneConnStatus');
+const phoneRemoteInfo = document.getElementById('phoneRemoteInfo');
+const qrBtn = document.getElementById('qrBtn');
+let mqttClient = null;
+let qrMode = false;
+let channelId = 'deskmat_' + Math.random().toString(36).slice(2,8);
+const MQTT_BROKER = 'wss://broker.emqx.io:8084/mqtt'; // broker test công khai, miễn phí, không cần đăng ký
+const TOPIC_CMD = 'deskmat3v/' + channelId + '/cmd';
+const TOPIC_STATE = 'deskmat3v/' + channelId + '/state';
+
+function isLocalFile(){ return location.protocol === 'file:'; }
+
+function initMqtt(){
+  if(mqttClient || typeof mqtt === 'undefined') return;
+  try{
+    mqttClient = mqtt.connect(MQTT_BROKER, {clientId:'desktop_'+channelId, reconnectPeriod:3000});
+    mqttClient.on('connect', ()=>{
+      mqttClient.subscribe(TOPIC_CMD);
+      broadcastState();
+    });
+    mqttClient.on('message', (topic, payload)=>{
+      try{
+        const d = JSON.parse(payload.toString());
+        if(d.from !== 'remote') return;
+        phoneConnStatus.textContent = '✅ Kết nối';
+        phoneConnStatus.className = 'connected';
+        phoneConnStatus.style.display = '';
+        if(d.file){ handleRemoteFile(d.file); broadcastState(); return; }
+        handleRemoteCommand(d.cmd);
+        broadcastState();
+      }catch(ex){}
+    });
+  }catch(ex){}
+}
+
+function handleRemoteCommand(cmd){
+  if(!cmd) return;
+  if(cmd === 'request_state' || cmd === 'ping'){ broadcastState(); return; }
+  if(cmd === 'timer_start'){ if(!timerInterval){ timerBtn.click(); } showToast('📱 Remote: Start timer'); return; }
+  if(cmd === 'timer_pause'){ if(timerInterval){ timerBtn.click(); } showToast('📱 Remote: Pause timer'); return; }
+  if(cmd === 'timer_stop'){ if(timerInterval){ timerBtn.click(); } showToast('📱 Remote: Stop timer'); return; }
+  if(cmd === 'focus_mode_open'){ openFocusMode(); showToast('📱 Remote: Focus Mode'); return; }
+  if(cmd === 'focus_skip'){ if(focusRunning) focusSkipBtn.click(); return; }
+  if(cmd === 'music_play'){ if(audioPlayer.paused) playPauseBtn.click(); else showToast('Nhạc đang phát'); return; }
+  if(cmd === 'music_pause'){ if(!audioPlayer.paused) playPauseBtn.click(); return; }
+  if(cmd.startsWith('music_vol:')){
+    const v=parseInt(cmd.split(':')[1])/100;
+    audioPlayer.volume=Math.min(1,Math.max(0,v));
+    volumeSlider.value=v;
+    return;
+  }
+  if(cmd.startsWith('theme:')){
+    const t=cmd.split(':')[1];
+    applyTheme(t);
+    showToast('📱 Remote: Theme '+t);
+    return;
+  }
+  if(cmd.startsWith('task_done:')){
+    const idx=parseInt(cmd.split(':')[1]);
+    const notes=allNotes.filter(n=>n.offsetParent!==null);
+    if(notes[idx]) notes[idx].click();
+    return;
+  }
+  if(cmd.startsWith('youtube_link:')){
+    const url=cmd.slice('youtube_link:'.length);
+    loadYoutubeUrl(url, true);
+    return;
+  }
+  if(cmd.startsWith('quick_note:')){
+    const text=cmd.slice('quick_note:'.length);
+    if(!text) return;
+    noteColorCycle=(noteColorCycle%4)+1;
+    const note=document.createElement('div');note.className='note note'+noteColorCycle;note.draggable=true;
+    const short=text.length>18?text.slice(0,16)+'…':text;
+    note.innerHTML=`<span class="num"></span><span class="led"></span><button class="del-btn" title="Xóa note">✕</button><h3 contenteditable="true" spellcheck="false">${short}</h3><p contenteditable="true" spellcheck="false">Từ điện thoại 📱</p><div class="time"><span><input type="text" value="—" class="dur-input"></span><span><input type="text" value="Ngay bây giờ" class="time-input"></span></div>`;
+    notesRow.appendChild(note);attachNoteEvents(note);allNotes.push(note);updateNoteNumbers();
+    showToast('📱 Note mới: '+short);
+    return;
+  }
+}
+
+function broadcastState(){
+  if(!mqttClient || !mqttClient.connected) return;
+  const notes=allNotes.filter(n=>n.offsetParent!==null);
+  const tasksData=notes.map(n=>({title:(n.querySelector('h3')||{textContent:''}).textContent,done:n.classList.contains('done')}));
+  const total = focusTotalSeconds>0?focusTotalSeconds:(wheelPickerValue*60);
+  const pct = Math.round(Math.max(0,Math.min(100,(1-(focusRunning?focusSeconds:totalSeconds)/total)*100)));
+  mqttClient.publish(TOPIC_STATE, JSON.stringify({
+    from:'desktop',
+    timer: focusRunning?formatTime(focusSeconds):timerDisplay.textContent,
+    task: getCurrentTaskName(),
+    phase: focusRunning?focusPhase.textContent:'',
+    progress: pct,
+    tasks: tasksData
+  }));
+}
+setInterval(broadcastState,2000);
+
+function showQRPanel(){
+  qrMode = !qrMode;
+  qrImg.style.display = qrMode?'block':'none';
+  qrStatus.style.display = qrMode?'block':'none';
+  phoneConnStatus.style.display = qrMode?'':'none';
+  phoneRemoteInfo.style.display = qrMode?'block':'none';
+
+  if(qrMode){
+    initMqtt();
+    if(isLocalFile()){
+      qrStatus.innerHTML = '⚠️ File đang mở trực tiếp (file://) — điện thoại <b>không thể</b> mở được link này. Hãy upload file HTML này lên 1 server thật (Netlify Drop / GitHub Pages — xem hướng dẫn Claude đã gửi), rồi mở lại trang đó.';
+      phoneRemoteInfo.style.display='none';
+      return;
+    }
+    const remoteUrl = location.origin + location.pathname + '?remote=1&ch=' + channelId;
+    qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=' + encodeURIComponent(remoteUrl);
+    qrImg.onerror = ()=>{ qrStatus.innerHTML = '⚠️ Không tải được ảnh QR (kiểm tra mạng).'; };
+    qrStatus.textContent = '📷 Quét QR bằng camera điện thoại (cùng mạng Internet)';
+    phoneConnStatus.style.display='';
+    phoneConnStatus.textContent='⏳ Chờ kết nối';
+    phoneConnStatus.className='waiting';
+    phoneRemoteInfo.innerHTML='<a href="'+remoteUrl+'" target="_blank" style="color:#caa24a;font-size:10px;">Bấm đây để mở Remote trực tiếp</a><br><small style="color:#666;">Hoặc quét QR bằng điện thoại</small>';
+    showToast('📱 QR Remote đã hiển thị');
+  } else {
+    showToast('QR đã ẩn');
+  }
+}
+
+qrBtn.addEventListener('click', showQRPanel);
+
+/* ---- REMOTE MODE: nếu mở trang này bằng ?remote=1&ch=XYZ (từ QR) thì hiện giao diện điều khiển ---- */
+(function initRemoteModeIfNeeded(){
+  const params = new URLSearchParams(location.search);
+  if(params.get('remote') !== '1') return;
+  document.body.classList.add('remote-mode');
+  const ch = params.get('ch') || 'demo';
+  const cmdTopic = 'deskmat3v/' + ch + '/cmd';
+  const stateTopic = 'deskmat3v/' + ch + '/state';
+  const connEl=document.getElementById('rmConnStatus'),timerEl=document.getElementById('rmTimerDisplay'),
+        taskEl=document.getElementById('rmCurrentTask'),phaseEl=document.getElementById('rmPhase'),
+        pfEl=document.getElementById('rmProgressFill'),tasksListEl=document.getElementById('rmTasksList'),
+        progressInfoEl=document.getElementById('rmProgressInfo');
+  let rmClient;
+
+  window.rmSend = function(cmd){
+    if(rmClient && rmClient.connected){
+      rmClient.publish(cmdTopic, JSON.stringify({from:'remote',cmd}));
+      rmShowFeedback(cmd);
+    }
+  };
+  window.rmSendNote = function(){
+    const el=document.getElementById('rmNoteInput');
+    const txt=el.value.trim(); if(!txt) return;
+    rmSend('quick_note:'+txt); el.value='';
+  };
+  function rmShowFeedback(cmd){
+    const fb=document.createElement('div');
+    fb.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--gold);color:#2b2b28;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:bold;z-index:999;transition:opacity .5s;';
+    fb.textContent='✓ '+cmd.split(':')[0].replace(/_/g,' ').toUpperCase();
+    document.body.appendChild(fb);
+    setTimeout(()=>{fb.style.opacity='0';setTimeout(()=>fb.remove(),500);},800);
+  }
+  function rmRenderTasks(tasks){
+    tasksListEl.innerHTML='';
+    let done=0;
+    tasks.forEach((t,i)=>{
+      if(t.done) done++;
+      const div=document.createElement('div');
+      div.className='rm-task-item'+(t.done?' done':'');
+      const colors=['#f2d96b','#e8a7a0','#9bc4dd','#a9c98f'];
+      div.innerHTML='<div class="dot" style="background:'+colors[i%4]+'"></div><span style="flex:1">'+(t.title||'Task '+(i+1))+'</span><button class="rm-check-btn" onclick="rmSend(\'task_done:'+i+'\')">'+(t.done?'↩':'✓')+'</button>';
+      tasksListEl.appendChild(div);
+    });
+    progressInfoEl.textContent='Đã hoàn thành '+done+'/'+tasks.length+' task hôm nay';
+  }
+
+  if(typeof mqtt === 'undefined'){
+    connEl.textContent='⚠️ Không tải được thư viện kết nối (kiểm tra mạng)';
+    connEl.className='err';
+    return;
+  }
+  rmClient = mqtt.connect(MQTT_BROKER, {clientId:'remote_'+ch+'_'+Math.random().toString(36).slice(2,6), reconnectPeriod:3000});
+  rmClient.on('connect', ()=>{
+    rmClient.subscribe(stateTopic);
+    rmClient.publish(cmdTopic, JSON.stringify({from:'remote',cmd:'request_state'}));
+    connEl.textContent='⏳ Đã kết nối broker, đợi Desktop...';
+    connEl.className='';
+  });
+  rmClient.on('message', (topic,payload)=>{
+    try{
+      const d=JSON.parse(payload.toString());
+      if(d.from!=='desktop') return;
+      connEl.textContent='✅ Đã kết nối Desktop';
+      connEl.className='ok';
+      if(d.timer!==undefined) timerEl.textContent=d.timer;
+      if(d.task!==undefined) taskEl.textContent=d.task||'';
+      if(d.phase!==undefined) phaseEl.textContent=d.phase||'';
+      if(d.progress!==undefined) pfEl.style.width=d.progress+'%';
+      if(d.tasks) rmRenderTasks(d.tasks);
+    }catch(ex){}
+  });
+  rmClient.on('error', ()=>{ connEl.textContent='⚠️ Lỗi kết nối broker'; connEl.className='err'; });
+  setInterval(()=>{ if(rmClient&&rmClient.connected) rmClient.publish(cmdTopic, JSON.stringify({from:'remote',cmd:'ping'})); },4000);
+})();
+
+/* ---- POWER BUTTON ---- */
+const systemBody=document.getElementById('systemBody'),powerBtn=document.getElementById('powerBtn'),powerDot=document.getElementById('powerDot'),powerOverlay=document.getElementById('powerOverlay');
+function setSystemPower(on){
+  systemOn=on;
+  systemBody.classList.toggle('system-on',on);systemBody.classList.toggle('system-off',!on);
+  powerBtn.classList.toggle('is-on',on);powerDot.classList.toggle('green',on);
+  powerOverlay.classList.toggle('show',!on);
+  showToast(on?'🟢 Hệ thống đã khởi động':'⏻ Hệ thống đã tắt');
+}
+powerBtn.addEventListener('click',()=>setSystemPower(!systemOn));
+setSystemPower(false);
+
+/* ---- MUSIC: LOCAL ---- */
+const audioPlayer=document.getElementById('audioPlayer'),playPauseBtn=document.getElementById('playPauseBtn'),volumeSlider=document.getElementById('volumeSlider'),audioFileInput=document.getElementById('audioFileInput'),trackTitle=document.getElementById('trackTitle');
+audioPlayer.volume=0.7;
+audioFileInput.addEventListener('change',()=>{
+  const file=audioFileInput.files[0];if(!file)return;
+  audioPlayer.src=URL.createObjectURL(file);trackTitle.textContent=file.name;
+  audioPlayer.play();playPauseBtn.textContent='⏸️ Pause';
+});
+playPauseBtn.addEventListener('click',()=>{
+  if(audioPlayer.paused){audioPlayer.play();playPauseBtn.textContent='⏸️ Pause';}
+  else{audioPlayer.pause();playPauseBtn.textContent='▶️ Play';}
+});
+audioPlayer.addEventListener('ended',()=>playPauseBtn.textContent='▶️ Play');
+volumeSlider.addEventListener('input',()=>audioPlayer.volume=parseFloat(volumeSlider.value));
+
+/* ---- MUSIC: YOUTUBE ---- */
+let ytPlayer = null;
+function switchMusicTab(tab){
+  document.getElementById('localMusicPanel').classList.toggle('visible', tab==='local');
+  document.getElementById('ytMusicPanel').classList.toggle('visible', tab==='yt');
+  document.getElementById('tabLocal').classList.toggle('active', tab==='local');
+  document.getElementById('tabYT').classList.toggle('active', tab==='yt');
+}
+
+function loadYoutubeUrl(url, fromRemote){
+  url = (url||'').trim();
+  if(!url){ showToast('⚠️ Vui lòng nhập link YouTube'); return; }
+  // Extract video or playlist ID — hỗ trợ: watch?v=, youtu.be/, /embed/, /shorts/, hoặc dán thẳng ID 11 ký tự
+  let embedUrl = '';
+  const plMatch = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+  const vidMatch =
+    url.match(/[?&]v=([a-zA-Z0-9_-]{6,})/) ||
+    url.match(/youtu\.be\/([a-zA-Z0-9_-]{6,})/) ||
+    url.match(/\/embed\/([a-zA-Z0-9_-]{6,})/) ||
+    url.match(/\/shorts\/([a-zA-Z0-9_-]{6,})/) ||
+    (/^[a-zA-Z0-9_-]{11}$/.test(url) ? [null, url] : null);
+  const origin = encodeURIComponent(location.origin);
+  if(plMatch){
+    embedUrl = `https://www.youtube.com/embed/videoseries?list=${plMatch[1]}&enablejsapi=1&origin=${origin}`;
+  } else if(vidMatch){
+    embedUrl = `https://www.youtube.com/embed/${vidMatch[1]}?enablejsapi=1&origin=${origin}`;
+  } else {
+    showToast('⚠️ Link YouTube không hợp lệ — dán link watch, youtu.be, hoặc link Shorts'); return;
+  }
+  switchMusicTab('yt');
+  document.getElementById('ytUrlInput').value = url;
+  const ytContainer = document.getElementById('ytContainer');
+  ytContainer.style.display='block';
+  ytContainer.innerHTML = `<iframe id="ytIframe" src="${embedUrl}" frameborder="0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>`;
+  if(isLocalFile()){
+    showToast('⚠️ File mở qua file:// — YouTube đôi khi không phát do origin null. Nên host lên server thật.');
+  } else {
+    showToast(fromRemote ? '📱 Remote: đã tải YouTube' : '▶ Đã tải YouTube — nhấn nút Play ngay trong khung video');
+  }
+}
+
+document.getElementById('ytLoadBtn').addEventListener('click',()=>{
+  loadYoutubeUrl(document.getElementById('ytUrlInput').value);
+});
+
+document.getElementById('ytVolumeSlider').addEventListener('input',function(){
+  document.getElementById('ytVolLabel').textContent=this.value+'%';
+  const iframe=document.getElementById('ytIframe');
+  if(iframe){try{iframe.contentWindow.postMessage('{"event":"command","func":"setVolume","args":['+this.value+']}','*');}catch(e){}}
+});
+
+/* ---- OVERDUE DEMO ---- */
+setTimeout(()=>{
+  const n=allNotes[2];
+  if(n&&!n.classList.contains('done')) n.classList.add('overdue');
+},8000);
+
+/* ---- PWA: đăng ký service worker để có thể "Thêm vào màn hình chính" ---- */
+if('serviceWorker' in navigator && !isLocalFile()){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredInstallPrompt = e;
+});
+function isIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent); }
+document.addEventListener('DOMContentLoaded', ()=>{
+  const installBtn = document.getElementById('installBtn');
+  if(installBtn){
+    installBtn.addEventListener('click', async ()=>{
+      if(deferredInstallPrompt){
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+      } else if(isIOS()){
+        showToast('📲 iPhone: bấm nút Share (hình ô vuông mũi tên lên) → "Thêm vào màn hình chính"');
+      } else {
+        showToast('📲 Mở menu trình duyệt (⋮) → "Cài đặt ứng dụng" / "Thêm vào màn hình chính"');
+      }
+    });
+  }
+});
+</script>
+</body>
+</html>
